@@ -1,0 +1,113 @@
+name: Deploy
+
+on:
+  push:
+    branches: [develop, main]
+  workflow_dispatch:
+    inputs:
+      version:
+        description: "Commit, rama o tag a desplegar (vacío = último commit)"
+        required: false
+        default: ""
+
+permissions:
+  contents: read
+
+concurrency:
+  group: deploy-${{ github.ref_name }}
+  cancel-in-progress: false
+
+env:
+  AMBIENTE: ${{ github.ref_name == 'main' && 'prod' || 'dev' }}
+
+jobs:
+  pruebas:
+    name: Lint y pruebas
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ inputs.version || github.sha }}
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: pip
+
+      - name: Instalar dependencias
+        run: pip install -r requirements-dev.txt
+
+      - name: Ruff
+        run: ruff check .
+
+      - name: Pruebas unitarias
+        run: pytest -v
+
+  desplegar:
+    name: Desplegar en Floci
+    needs: pruebas
+    runs-on: ubuntu-latest
+    environment: ${{ github.ref_name == 'main' && 'prod' || 'dev' }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ inputs.version || github.sha }}
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - uses: hashicorp/setup-terraform@v3
+        with:
+          terraform_wrapper: false
+
+      - name: Levantar Floci
+        run: |
+          docker run -d --name floci -p 4566:4566 \
+            -v /var/run/docker.sock:/var/run/docker.sock \
+            floci/floci:latest
+          for intento in $(seq 1 30); do
+            if curl -sf http://localhost:4566/_localstack/health > /dev/null; then
+              echo "Floci listo"
+              exit 0
+            fi
+            sleep 2
+          done
+          echo "Floci no respondió"
+          docker logs floci
+          exit 1
+
+      - name: Terraform init
+        working-directory: infra
+        run: terraform init -input=false
+
+      - name: Terraform apply
+        working-directory: infra
+        run: terraform apply -input=false -auto-approve -var-file="$AMBIENTE.tfvars"
+
+      - name: Leer salidas
+        id: salidas
+        working-directory: infra
+        run: |
+          echo "url_api=$(terraform output -raw url_api)" >> "$GITHUB_OUTPUT"
+          echo "url_sitio=$(terraform output -raw url_sitio)" >> "$GITHUB_OUTPUT"
+
+      - name: Smoke test
+        run: python scripts/smoke_test.py "${{ steps.salidas.outputs.url_api }}" "${{ steps.salidas.outputs.url_sitio }}"
+
+      - name: Resumen
+        if: always()
+        run: |
+          {
+            echo "## Despliegue en $AMBIENTE"
+            echo ""
+            echo "| | |"
+            echo "|---|---|"
+            echo "| Versión | \`${{ inputs.version || github.sha }}\` |"
+            echo "| API | ${{ steps.salidas.outputs.url_api }} |"
+            echo "| Sitio | ${{ steps.salidas.outputs.url_sitio }} |"
+          } >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Logs de Floci si algo falla
+        if: failure()
+        run: docker logs floci | tail -200
