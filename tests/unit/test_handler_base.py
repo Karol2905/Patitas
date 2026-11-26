@@ -36,7 +36,7 @@ def test_respuesta_trae_cors(tabla):
     assert resp["headers"]["Access-Control-Allow-Origin"] == "*"
 
 
-def test_body_es_texto_json():
+def test_body_es_texto_json(tabla):
     from handler import respuesta
 
     resp = respuesta(200, {"mensaje": "Cita para nina"})
