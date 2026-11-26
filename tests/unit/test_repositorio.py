@@ -71,19 +71,48 @@ def test_cancelar_deja_estado_cancelada(tabla):
 
     repositorio.cancelar("abc")
 
-    guardada = tabla.get_item(Key={"pk": "2026-12-01#09:30"})["Item"]
-    assert guardada["estado"] == "CANCELADA"
+    archivada = tabla.get_item(Key={"pk": "CANCELADA#abc"})["Item"]
+    assert archivada["estado"] == "CANCELADA"
+    assert "cancelada_en" in archivada
 
 
-def test_cancelar_no_borra_la_cita(tabla):
+def test_cancelar_libera_la_franja(tabla):
     import repositorio
 
     tabla.put_item(Item=_cita("abc"))
 
     repositorio.cancelar("abc")
 
-    guardada = tabla.get_item(Key={"pk": "2026-12-01#09:30"})["Item"]
-    assert guardada["mascota"] == "Firulais"
+    assert "Item" not in tabla.get_item(Key={"pk": "2026-12-01#09:30"})
+
+
+def test_cancelar_conserva_los_datos_de_la_cita(tabla):
+    import repositorio
+
+    tabla.put_item(Item=_cita("abc"))
+
+    repositorio.cancelar("abc")
+
+    archivada = tabla.get_item(Key={"pk": "CANCELADA#abc"})["Item"]
+    assert archivada["id"] == "abc"
+    assert archivada["fecha"] == "2026-12-01"
+    assert archivada["hora"] == "09:30"
+    assert archivada["mascota"] == "Firulais"
+
+
+def test_franja_cancelada_se_puede_volver_a_agendar(tabla):
+    import repositorio
+
+    tabla.put_item(Item=_cita("vieja"))
+    repositorio.cancelar("vieja")
+
+    tabla.put_item(
+        Item=_cita("nueva"),
+        ConditionExpression="attribute_not_exists(pk)",
+    )
+
+    estados = {c["id"]: c["estado"] for c in repositorio.listar("2026-12-01")}
+    assert estados == {"vieja": "CANCELADA", "nueva": "ACTIVA"}
 
 
 def test_cancelar_solo_cambia_la_cita_indicada(tabla):
@@ -96,6 +125,28 @@ def test_cancelar_solo_cambia_la_cita_indicada(tabla):
 
     otra = tabla.get_item(Key={"pk": "2026-12-01#10:00"})["Item"]
     assert otra["estado"] == "ACTIVA"
+
+
+def test_cancelar_dos_veces_no_falla_ni_duplica(tabla):
+    import repositorio
+
+    tabla.put_item(Item=_cita("abc"))
+
+    repositorio.cancelar("abc")
+    repositorio.cancelar("abc")
+
+    assert len(tabla.scan()["Items"]) == 1
+
+
+def test_listar_incluye_las_canceladas(tabla):
+    import repositorio
+
+    tabla.put_item(Item=_cita("abc"))
+    repositorio.cancelar("abc")
+
+    citas = repositorio.listar("2026-12-01")
+
+    assert [(c["id"], c["estado"]) for c in citas] == [("abc", "CANCELADA")]
 
 
 def test_cancelar_inexistente_lanza_cita_no_encontrada(tabla):

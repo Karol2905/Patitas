@@ -1,4 +1,5 @@
 import os
+from datetime import datetime, timezone
 
 import boto3
 
@@ -29,10 +30,33 @@ def cancelar(id_cita):
     cita = next((c for c in _todas_las_citas() if c.get("id") == id_cita), None)
     if cita is None:
         raise CitaNoEncontrada(id_cita)
+    if cita.get("estado") == "CANCELADA":
+        return
 
-    tabla.update_item(
-        Key={"pk": cita["pk"]},
-        UpdateExpression="SET #e = :c",
-        ExpressionAttributeNames={"#e": "estado"},
-        ExpressionAttributeValues={":c": "CANCELADA"},
+    archivada = {
+        **cita,
+        "pk": f"CANCELADA#{id_cita}",
+        "estado": "CANCELADA",
+        "cancelada_en": datetime.now(timezone.utc).isoformat(),
+    }
+
+    tabla.meta.client.transact_write_items(
+        TransactItems=[
+            {
+                "Put": {
+                    "TableName": tabla.name,
+                    "Item": archivada,
+                    "ConditionExpression": "attribute_not_exists(pk)",
+                }
+            },
+            {
+                "Delete": {
+                    "TableName": tabla.name,
+                    "Key": {"pk": cita["pk"]},
+                    "ConditionExpression": "#e = :activa",
+                    "ExpressionAttributeNames": {"#e": "estado"},
+                    "ExpressionAttributeValues": {":activa": "ACTIVA"},
+                }
+            },
+        ]
     )
