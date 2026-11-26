@@ -130,12 +130,12 @@ Reglas: `fecha`, `hora`, `mascota`, `especie`, `dueno`, `correo` y `telefono` so
 
 ## Prueba de carga (RNF-05)
 
-Prueba contra la infraestructura desplegada en Floci con Terraform, por el mismo camino de la demo (API Gateway → Lambda → DynamoDB). Mezcla de peticiones: 70 % consultas por fecha, 10 % listado completo y 20 % reservas nuevas.
+Prueba contra la infraestructura desplegada en Floci con Terraform, por el mismo camino de la demo (API Gateway → Lambda → DynamoDB). Mezcla de peticiones: 70 % consultas por fecha, 10 % listado completo y 20 % reservas nuevas. Antes de medir, el script hace 5 peticiones de calentamiento a `GET /citas` que no se cuentan en los resultados, para que la fase base no incluya el arranque en frío de la Lambda.
 
 | Fase | Peticiones | Ritmo | Errores 5xx | p50 | p95 | p99 | Máx. |
 |---|---|---|---|---|---|---|---|
-| Carga base (60 s) | 120 | 2 pet/s | **0** | 14 ms | 22 ms | 23 ms | 26 ms |
-| **Carga 3× (60 s)** | 360 | 6 pet/s | **0** | 17 ms | 28 ms | 34 ms | 42 ms |
+| Carga base (60 s) | 120 | 2 pet/s | **0** | 5,8 ms | 6,9 ms | 7,9 ms | 8,0 ms |
+| **Carga 3× (60 s)** | 360 | 6 pet/s | **0** | 8,4 ms | 10,5 ms | 12,0 ms | 25,0 ms |
 
 Los `409` que aparecen son reservas que cayeron en una franja ya ocupada, que es el comportamiento correcto.
 
@@ -144,7 +144,7 @@ Los `409` que aparecen son reservas que cayeron en una franja ya ocupada, que es
 | Reservas simultáneas | Creadas | Rechazadas (409) | Limitadas (429) |
 |---|---|---|---|
 | 10 | **1** | 9 | 0 |
-| 20 | **1** | 12 | 7 |
+| 20 | **1** | 9 | 10 |
 
 En los dos casos solo se creó una cita. Por encima de 10 peticiones simultáneas, API Gateway responde `429` por el límite de 10 ejecuciones simultáneas de la Lambda definido en Terraform, que acota el abuso y el gasto.
 
@@ -154,7 +154,7 @@ Para repetirla:
 python scripts/prueba_carga.py "$(terraform -chdir=infra output -raw url_api)" 2 60
 ```
 
-Los argumentos son la URL de la API, la carga base en peticiones por segundo y la duración de cada fase en segundos. El script termina con error si hay algún `5xx` o una doble reserva.
+Los argumentos son la URL de la API, la carga base en peticiones por segundo y la duración de cada fase en segundos. El script termina con error si hay algún `5xx`, alguna petición sin respuesta o si una prueba de doble reserva no crea exactamente una cita.
 
 **Limitación:** las latencias son del emulador Floci, no de AWS real, y no incluyen los arranques en frío de Lambda. Los errores y la integridad de los datos sí son representativos.
 
