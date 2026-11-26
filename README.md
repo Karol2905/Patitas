@@ -128,6 +128,36 @@ Ejemplo de `POST /citas`:
 
 Reglas: `fecha`, `hora`, `mascota`, `especie`, `dueno`, `correo` y `telefono` son obligatorios; `acepta_tratamiento_datos` debe ser `true`; la fecha no puede estar en el pasado ni ser domingo; la hora va de `08:00` a `17:30`, en punto o y media.
 
+## Prueba de carga (RNF-05)
+
+Prueba contra la infraestructura desplegada en Floci con Terraform, por el mismo camino de la demo (API Gateway → Lambda → DynamoDB). Mezcla de peticiones: 70 % consultas por fecha, 10 % listado completo y 20 % reservas nuevas.
+
+| Fase | Peticiones | Ritmo | Errores 5xx | p50 | p95 | p99 | Máx. |
+|---|---|---|---|---|---|---|---|
+| Carga base (60 s) | 120 | 2 pet/s | **0** | 14 ms | 22 ms | 23 ms | 26 ms |
+| **Carga 3× (60 s)** | 360 | 6 pet/s | **0** | 17 ms | 28 ms | 34 ms | 42 ms |
+
+Los `409` que aparecen son reservas que cayeron en una franja ya ocupada, que es el comportamiento correcto.
+
+**Doble reserva** (misma franja, peticiones simultáneas):
+
+| Reservas simultáneas | Creadas | Rechazadas (409) | Limitadas (429) |
+|---|---|---|---|
+| 10 | **1** | 9 | 0 |
+| 20 | **1** | 12 | 7 |
+
+En los dos casos solo se creó una cita. Por encima de 10 peticiones simultáneas, API Gateway responde `429` por el límite de 10 ejecuciones simultáneas de la Lambda definido en Terraform, que acota el abuso y el gasto.
+
+Para repetirla:
+
+```bash
+python scripts/prueba_carga.py "$(terraform -chdir=infra output -raw url_api)" 2 60
+```
+
+Los argumentos son la URL de la API, la carga base en peticiones por segundo y la duración de cada fase en segundos. El script termina con error si hay algún `5xx` o una doble reserva.
+
+**Limitación:** las latencias son del emulador Floci, no de AWS real, y no incluyen los arranques en frío de Lambda. Los errores y la integridad de los datos sí son representativos.
+
 ## Pipeline
 
 ### Ramas
