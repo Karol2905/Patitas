@@ -45,7 +45,7 @@ backend/            Lambda: handler.py, repositorio.py, validacion.py
 frontend/           Sitio estático: index.html, app.js, styles.css, img/
 infra/              Terraform: tabla, Lambda, API, sitio y monitoreo; dev.tfvars y prod.tfvars
 tests/              Pruebas con pytest y moto (conftest.py, eventos.py, unit/)
-scripts/            servidor_local.py y smoke_test.py
+scripts/            servidor_local.py, smoke_test.py y prueba_carga.py
 .github/workflows/  ci.yml y deploy.yml
 docker-compose.yml  Floci en el puerto 4566
 ```
