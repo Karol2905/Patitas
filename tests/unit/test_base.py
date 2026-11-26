@@ -22,11 +22,11 @@ def test_cada_prueba_recibe_una_tabla_nueva(tabla):
 
 
 def test_evento_convierte_body_dict_a_texto():
-    evento = armar_evento("POST", "/citas", body={"mascota": "Firulais"})
+    evento = armar_evento("POST", "/citas", body={"mascota": "Pachito"})
     assert evento["httpMethod"] == "POST"
     assert evento["path"] == "/citas"
     assert isinstance(evento["body"], str)
-    assert json.loads(evento["body"]) == {"mascota": "Firulais"}
+    assert json.loads(evento["body"]) == {"mascota": "Pachito"}
 
 
 def test_evento_sin_datos_opcionales_trae_none():

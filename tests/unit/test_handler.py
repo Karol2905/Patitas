@@ -2,15 +2,17 @@ import json
 
 from eventos import armar_evento
 
+ESPECIES = {"Pachito": "Gato", "Nina": "Perro", "Laika": "Perro", "Mono": "Perro"}
 
-def _cita(id_cita, fecha="2026-12-01", hora="09:30"):
+
+def _cita(id_cita, fecha="2026-12-01", hora="09:30", mascota="Nina"):
     return {
         "pk": f"{fecha}#{hora}",
         "id": id_cita,
         "fecha": fecha,
         "hora": hora,
-        "mascota": "Firulais",
-        "especie": "Perro",
+        "mascota": mascota,
+        "especie": ESPECIES[mascota],
         "dueno": "Juan Pérez",
         "correo": "juan@gmail.com",
         "telefono": "3001234567",
@@ -57,12 +59,13 @@ def test_get_citas_sin_citas_devuelve_lista_vacia(tabla):
 
 def test_get_citas_con_fecha_filtra(tabla):
     tabla.put_item(Item=_cita("1", fecha="2026-12-01"))
-    tabla.put_item(Item=_cita("2", fecha="2026-12-02"))
+    tabla.put_item(Item=_cita("2", fecha="2026-12-02", mascota="Laika"))
 
     resp, citas = _llamar("GET", "/citas", query={"fecha": "2026-12-02"})
 
     assert resp["statusCode"] == 200
     assert [c["id"] for c in citas] == ["2"]
+    assert citas[0]["mascota"] == "Laika"
 
 
 def test_delete_cita_existente_devuelve_200(tabla):

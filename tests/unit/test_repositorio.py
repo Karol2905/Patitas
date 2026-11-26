@@ -1,14 +1,16 @@
 import pytest
 
+ESPECIES = {"Pachito": "Gato", "Nina": "Perro", "Laika": "Perro", "Mono": "Perro"}
 
-def _cita(id_cita, fecha="2026-12-01", hora="09:30", estado="ACTIVA"):
+
+def _cita(id_cita, fecha="2026-12-01", hora="09:30", estado="ACTIVA", mascota="Nina"):
     return {
         "pk": f"{fecha}#{hora}",
         "id": id_cita,
         "fecha": fecha,
         "hora": hora,
-        "mascota": "Firulais",
-        "especie": "Perro",
+        "mascota": mascota,
+        "especie": ESPECIES[mascota],
         "dueno": "Juan Pérez",
         "correo": "juan@gmail.com",
         "telefono": "3001234567",
@@ -28,8 +30,8 @@ def test_listar_tabla_vacia_devuelve_lista_vacia(tabla):
 def test_listar_devuelve_todas_las_citas(tabla):
     import repositorio
 
-    tabla.put_item(Item=_cita("1", hora="09:00"))
-    tabla.put_item(Item=_cita("2", hora="10:00"))
+    tabla.put_item(Item=_cita("1", hora="09:00", mascota="Pachito"))
+    tabla.put_item(Item=_cita("2", hora="10:00", mascota="Laika"))
 
     assert len(repositorio.listar()) == 2
 
@@ -38,8 +40,8 @@ def test_listar_por_fecha_devuelve_solo_esa_fecha(tabla):
     import repositorio
 
     tabla.put_item(Item=_cita("1", fecha="2026-12-01"))
-    tabla.put_item(Item=_cita("2", fecha="2026-12-02"))
-    tabla.put_item(Item=_cita("3", fecha="2026-12-01", hora="11:00"))
+    tabla.put_item(Item=_cita("2", fecha="2026-12-02", mascota="Mono"))
+    tabla.put_item(Item=_cita("3", fecha="2026-12-01", hora="11:00", mascota="Pachito"))
 
     citas = repositorio.listar("2026-12-01")
 
@@ -57,9 +59,9 @@ def test_listar_por_fecha_sin_citas_devuelve_lista_vacia(tabla):
 def test_listar_ordena_por_fecha_y_hora(tabla):
     import repositorio
 
-    tabla.put_item(Item=_cita("tarde", fecha="2026-12-01", hora="15:00"))
-    tabla.put_item(Item=_cita("otro-dia", fecha="2026-12-02", hora="08:00"))
-    tabla.put_item(Item=_cita("temprano", fecha="2026-12-01", hora="08:00"))
+    tabla.put_item(Item=_cita("tarde", fecha="2026-12-01", hora="15:00", mascota="Laika"))
+    tabla.put_item(Item=_cita("otro-dia", fecha="2026-12-02", hora="08:00", mascota="Mono"))
+    tabla.put_item(Item=_cita("temprano", fecha="2026-12-01", hora="08:00", mascota="Pachito"))
 
     assert [c["id"] for c in repositorio.listar()] == ["temprano", "tarde", "otro-dia"]
 
@@ -89,7 +91,7 @@ def test_cancelar_libera_la_franja(tabla):
 def test_cancelar_conserva_los_datos_de_la_cita(tabla):
     import repositorio
 
-    tabla.put_item(Item=_cita("abc"))
+    tabla.put_item(Item=_cita("abc", mascota="Pachito"))
 
     repositorio.cancelar("abc")
 
@@ -97,17 +99,18 @@ def test_cancelar_conserva_los_datos_de_la_cita(tabla):
     assert archivada["id"] == "abc"
     assert archivada["fecha"] == "2026-12-01"
     assert archivada["hora"] == "09:30"
-    assert archivada["mascota"] == "Firulais"
+    assert archivada["mascota"] == "Pachito"
+    assert archivada["especie"] == "Gato"
 
 
 def test_franja_cancelada_se_puede_volver_a_agendar(tabla):
     import repositorio
 
-    tabla.put_item(Item=_cita("vieja"))
+    tabla.put_item(Item=_cita("vieja", mascota="Laika"))
     repositorio.cancelar("vieja")
 
     tabla.put_item(
-        Item=_cita("nueva"),
+        Item=_cita("nueva", mascota="Mono"),
         ConditionExpression="attribute_not_exists(pk)",
     )
 
@@ -119,7 +122,7 @@ def test_cancelar_solo_cambia_la_cita_indicada(tabla):
     import repositorio
 
     tabla.put_item(Item=_cita("1", hora="09:00"))
-    tabla.put_item(Item=_cita("2", hora="10:00"))
+    tabla.put_item(Item=_cita("2", hora="10:00", mascota="Pachito"))
 
     repositorio.cancelar("1")
 
