@@ -1,0 +1,190 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Veterinaria Patitas | Agenda tu cita</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=Plus+Jakarta+Sans:wght@600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <header class="barra">
+    <div class="barra-contenido">
+      <a class="marca" href="#">
+        <svg class="marca-icono" viewBox="0 0 32 32" aria-hidden="true">
+          <circle cx="9" cy="10" r="3.2"/>
+          <circle cx="16" cy="7" r="3.2"/>
+          <circle cx="23" cy="10" r="3.2"/>
+          <circle cx="26" cy="17" r="2.8"/>
+          <path d="M16 14c-4.6 0-9 5.3-9 9.4 0 2.6 2 3.8 4.4 3.8 1.9 0 3-.9 4.6-.9s2.7.9 4.6.9c2.4 0 4.4-1.2 4.4-3.8 0-4.1-4.4-9.4-9-9.4z"/>
+        </svg>
+        <span>patitas</span>
+      </a>
+      <a class="boton-secundario" href="#seccion-citas">Ver citas</a>
+    </div>
+  </header>
+
+  <section class="encabezado">
+    <div class="contenedor">
+      <h1>Veterinaria Patitas</h1>
+      <ul class="datos-clinica">
+        <li>
+          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 21s-7-6.2-7-11.5a7 7 0 0 1 14 0C19 14.8 12 21 12 21z"/><circle cx="12" cy="9.5" r="2.5"/></svg>
+          Calle 45 # 12-30, Bogotá, Colombia
+        </li>
+        <li>
+          <svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="5" width="18" height="14" rx="2"/><path d="m3 7 9 6 9-6"/></svg>
+          citas@patitas.co
+        </li>
+        <li>
+          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 4h4l2 5-2.5 1.5a11 11 0 0 0 5 5L15 13l5 2v4a2 2 0 0 1-2 2A16 16 0 0 1 3 6a2 2 0 0 1 2-2z"/></svg>
+          601 555 0123
+        </li>
+      </ul>
+    </div>
+  </section>
+
+  <main class="contenedor">
+    <section id="seccion-agendar" class="reserva">
+      <div class="reserva-principal">
+        <ol class="pasos" id="pasos">
+          <li data-paso="1" class="activo"><span>Motivo</span></li>
+          <li data-paso="2"><span>Fecha y hora</span></li>
+          <li data-paso="3"><span>Datos</span></li>
+          <li data-paso="4"><span>Confirmación</span></li>
+        </ol>
+
+        <h2>Agenda tu cita</h2>
+        <p class="introduccion">
+          Este sistema es para consultas generales, vacunas, controles y primeras consultas de perros y gatos.
+          Cada cita es para una sola mascota. Si necesitas atender a más de una, reserva citas consecutivas.
+        </p>
+
+        <form id="form-cita" novalidate>
+          <fieldset class="bloque">
+            <legend>Selecciona el motivo de la visita</legend>
+            <div class="opciones-motivo" id="opciones-motivo"></div>
+          </fieldset>
+
+          <fieldset class="bloque">
+            <legend>Selecciona el día</legend>
+            <div class="navegacion-semana">
+              <button type="button" class="boton-icono" id="semana-anterior" aria-label="Semana anterior">
+                <svg viewBox="0 0 24 24" aria-hidden="true"><path d="m15 18-6-6 6-6"/></svg>
+              </button>
+              <button type="button" class="boton-texto" id="semana-siguiente">
+                Semana siguiente
+                <svg viewBox="0 0 24 24" aria-hidden="true"><path d="m9 18 6-6-6-6"/></svg>
+              </button>
+            </div>
+            <div class="dias" id="dias"></div>
+          </fieldset>
+
+          <fieldset class="bloque">
+            <legend>Horarios disponibles</legend>
+            <div class="horas" id="horas">
+              <p class="vacio">Selecciona un día para ver los horarios.</p>
+            </div>
+          </fieldset>
+
+          <fieldset class="bloque">
+            <legend>Datos de la mascota y del propietario</legend>
+            <div class="campos">
+              <label class="campo">
+                <span>Nombre de la mascota</span>
+                <input type="text" name="mascota" autocomplete="off" required>
+              </label>
+              <label class="campo">
+                <span>Especie</span>
+                <select name="especie" required>
+                  <option value="">Selecciona</option>
+                  <option value="Perro">Perro</option>
+                  <option value="Gato">Gato</option>
+                </select>
+              </label>
+              <label class="campo campo-ancho">
+                <span>Nombre del propietario</span>
+                <input type="text" name="dueno" autocomplete="name" required>
+              </label>
+              <label class="campo">
+                <span>Correo electrónico</span>
+                <input type="email" name="correo" autocomplete="email" required>
+              </label>
+              <label class="campo">
+                <span>Teléfono</span>
+                <input type="tel" name="telefono" autocomplete="tel" required>
+              </label>
+            </div>
+
+            <label class="consentimiento">
+              <input type="checkbox" name="acepta_tratamiento_datos">
+              <span>
+                Autorizo el tratamiento de mis datos personales para gestionar esta cita, de acuerdo con la
+                Ley 1581 de 2012. Puedo consultar, actualizar o pedir la eliminación de mis datos en cualquier momento.
+              </span>
+            </label>
+          </fieldset>
+
+          <div id="mensaje-form" class="mensaje" role="alert" hidden></div>
+
+          <button type="submit" class="boton-principal" id="boton-agendar">
+            <svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="5" width="18" height="16" rx="2"/><path d="M16 3v4M8 3v4M3 10h18"/></svg>
+            Agendar cita
+          </button>
+        </form>
+      </div>
+
+      <aside class="resumen">
+        <div class="resumen-tarjeta">
+          <div class="resumen-logo">
+            <svg viewBox="0 0 32 32" aria-hidden="true">
+              <circle cx="9" cy="10" r="3.2"/>
+              <circle cx="16" cy="7" r="3.2"/>
+              <circle cx="23" cy="10" r="3.2"/>
+              <circle cx="26" cy="17" r="2.8"/>
+              <path d="M16 14c-4.6 0-9 5.3-9 9.4 0 2.6 2 3.8 4.4 3.8 1.9 0 3-.9 4.6-.9s2.7.9 4.6.9c2.4 0 4.4-1.2 4.4-3.8 0-4.1-4.4-9.4-9-9.4z"/>
+            </svg>
+          </div>
+          <dl>
+            <div>
+              <dt>Clínica</dt>
+              <dd>Veterinaria Patitas</dd>
+            </div>
+            <div>
+              <dt>Dirección</dt>
+              <dd>Calle 45 # 12-30, Bogotá</dd>
+            </div>
+            <div>
+              <dt>Motivo</dt>
+              <dd id="resumen-motivo" class="pendiente">Sin seleccionar</dd>
+            </div>
+            <div>
+              <dt>Fecha</dt>
+              <dd id="resumen-fecha" class="pendiente">Sin seleccionar</dd>
+            </div>
+            <div>
+              <dt>Hora</dt>
+              <dd id="resumen-hora" class="pendiente">Sin seleccionar</dd>
+            </div>
+          </dl>
+          <p class="resumen-nota">Horario de atención: lunes a sábado, de 8:00 a. m. a 6:00 p. m.</p>
+        </div>
+      </aside>
+    </section>
+
+    <section id="seccion-citas" class="citas">
+      <h2>Citas agendadas</h2>
+      <table id="tabla-citas"></table>
+    </section>
+  </main>
+
+  <footer class="pie">
+    <div class="contenedor">Veterinaria Patitas</div>
+  </footer>
+
+  <script src="config.js"></script>
+  <script src="app.js"></script>
+</body>
+</html>
