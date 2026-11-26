@@ -1,0 +1,12 @@
+[tool.pytest.ini_options]
+# Permite hacer "import repositorio" y "from eventos import armar_evento"
+# en las pruebas sin convertir las carpetas en paquetes.
+pythonpath = ["backend", "tests"]
+testpaths = ["tests"]
+
+[tool.ruff]
+line-length = 100
+target-version = "py312"
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "B"]
