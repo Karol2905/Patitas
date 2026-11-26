@@ -9,12 +9,12 @@ HOY = date(2026, 12, 1)
 
 @pytest.fixture(autouse=True)
 def hoy_fijo(monkeypatch):
-   
+
     monkeypatch.setattr(validacion, "hoy_en_colombia", lambda: HOY)
 
 
 def cita_valida(**cambios):
-    
+
     datos = {
         "fecha": "2026-12-02",  # miércoles, mañana
         "hora": "09:30",
