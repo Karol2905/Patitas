@@ -1,13 +1,45 @@
 import os
+import uuid
 from datetime import datetime, timezone
 
 import boto3
+from botocore.exceptions import ClientError
 
 tabla = boto3.resource("dynamodb").Table(os.environ["TABLE_NAME"])
 
 
+class FranjaOcupada(Exception):
+    pass
+
+
 class CitaNoEncontrada(Exception):
     pass
+
+
+CAMPOS_DE_LA_CITA = ["fecha", "hora", "mascota", "especie", "dueno", "correo", "telefono", "motivo"]
+
+
+def guardar(datos):
+    ahora = datetime.now(timezone.utc).isoformat()
+    cita = {campo: str(datos.get(campo) or "").strip() for campo in CAMPOS_DE_LA_CITA}
+    cita.update(
+        {
+            "pk": f"{cita['fecha']}#{cita['hora']}",
+            "id": str(uuid.uuid4()),
+            "estado": "ACTIVA",
+            "creada_en": ahora,
+            "consentimiento_en": ahora,
+        }
+    )
+
+    try:
+        tabla.put_item(Item=cita, ConditionExpression="attribute_not_exists(pk)")
+    except ClientError as error:
+        if error.response["Error"]["Code"] == "ConditionalCheckFailedException":
+            raise FranjaOcupada(cita["pk"]) from error
+        raise
+
+    return cita
 
 
 def _todas_las_citas():

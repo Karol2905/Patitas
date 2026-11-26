@@ -4,7 +4,6 @@ import pytest
 import validacion
 from validacion import validar_cita
 
-
 HOY = date(2026, 12, 1)
 
 

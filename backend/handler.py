@@ -1,8 +1,8 @@
 import json
 import logging
 
-from repositorio import CitaNoEncontrada, cancelar, listar
-from validacion import enmascarar_correo, enmascarar_telefono
+from repositorio import CitaNoEncontrada, FranjaOcupada, cancelar, guardar, listar
+from validacion import enmascarar_correo, enmascarar_telefono, validar_cita
 
 logger = logging.getLogger()
 logger.setLevel(logging.INFO)
@@ -48,8 +48,28 @@ def lambda_handler(event, context):
 
 
 def crear_cita(event):
-    """POST /citas -> 201 | 400 | 409. (Persona A, paso A4)"""
-    return respuesta(501, {"error": "No implementado"})
+    try:
+        datos = json.loads(event.get("body") or "")
+    except json.JSONDecodeError:
+        return respuesta(400, {"errores": ["El cuerpo de la petición debe ser un JSON válido"]})
+
+    if not isinstance(datos, dict):
+        return respuesta(400, {"errores": ["El cuerpo de la petición debe ser un objeto JSON"]})
+
+    errores = validar_cita(datos)
+    if errores:
+        return respuesta(400, {"errores": errores})
+
+    try:
+        cita = guardar(datos)
+    except FranjaOcupada:
+        return respuesta(409, {"error": "Ya hay una cita agendada en esa fecha y hora"})
+
+    logger.info("Cita creada id=%s", cita["id"])
+    return respuesta(
+        201,
+        {"id": cita["id"], "fecha": cita["fecha"], "hora": cita["hora"], "estado": cita["estado"]},
+    )
 
 
 def listar_citas(event):
