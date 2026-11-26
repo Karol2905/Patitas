@@ -12,6 +12,7 @@ HORAS = [f"{h:02d}:{m:02d}" for h in range(8, 18) for m in (0, 30)]
 MASCOTAS = [("Pachito", "Gato"), ("Nina", "Perro"), ("Laika", "Perro"), ("Mono", "Perro")]
 MEZCLA = [("consulta_fecha", 0.7), ("listado", 0.1), ("reserva", 0.2)]
 TIEMPO_MAXIMO = 15
+CALENTAMIENTO = 5
 
 
 def dias_habiles(desde, cantidad):
@@ -70,6 +71,11 @@ def percentil(valores, p):
     ordenados = sorted(valores)
     k = max(0, min(len(ordenados) - 1, round(p / 100 * len(ordenados) + 0.5) - 1))
     return round(ordenados[k], 1)
+
+
+def calentar(api):
+    estados = [pedir("GET", f"{api}/citas")[0] for _ in range(CALENTAMIENTO)]
+    print(f"Calentamiento: {CALENTAMIENTO} peticiones GET /citas sin medir, estados {estados}")
 
 
 def fase(api, nombre, ritmo, duracion, dias):
@@ -156,8 +162,10 @@ def doble_reserva(api, simultaneas, fecha, hora):
         "limitadas_429": estados.count(429),
         "errores_5xx": sum(1 for e in estados if e >= 500),
         "sin_respuesta": estados.count(0),
-        "correcto": creadas <= 1,
     }
+    resumen["correcto"] = (
+        creadas == 1 and resumen["errores_5xx"] == 0 and resumen["sin_respuesta"] == 0
+    )
     print(
         f"Doble reserva con {simultaneas} simultaneas: {creadas} creadas, "
         f"{resumen['rechazadas_409']} con 409, {resumen['limitadas_429']} con 429, "
@@ -175,6 +183,7 @@ def main():
     duracion = int(sys.argv[3]) if len(sys.argv) > 3 else 60
 
     dias = dias_habiles(30, 20)
+    calentar(api)
     fases = [
         fase(api, "Carga base", ritmo, duracion, dias),
         fase(api, "Carga 3x", ritmo * 3, duracion, dias),
@@ -194,9 +203,9 @@ def main():
     hay_5xx = any(r["errores_5xx"] or r["sin_respuesta"] for r in todas)
     hay_doble = any(not d["correcto"] for d in dobles)
     if hay_5xx or hay_doble:
-        print("FALLA: hubo errores 5xx, peticiones sin respuesta o una doble reserva")
+        print("FALLA: hubo errores 5xx, peticiones sin respuesta o una doble reserva incorrecta")
         sys.exit(1)
-    print("OK: sin errores 5xx y sin dobles reservas")
+    print("OK: sin errores 5xx y cada doble reserva creo exactamente una cita")
 
 
 if __name__ == "__main__":
