@@ -16,7 +16,7 @@ HEADERS = {
 
 
 def respuesta(status, body):
- 
+
     return {
         "statusCode": status,
         "headers": HEADERS,
@@ -25,13 +25,12 @@ def respuesta(status, body):
 
 
 def lambda_handler(event, context):
-  
+
     metodo = event.get("httpMethod")
     path = event.get("path", "")
 
     try:
         if metodo == "OPTIONS":
-            
             return respuesta(200, {})
         elif path == "/citas" and metodo == "POST":
             return crear_cita(event)
@@ -42,7 +41,6 @@ def lambda_handler(event, context):
         else:
             return respuesta(404, {"error": "Ruta no encontrada"})
     except Exception:
-       
         logger.exception("Error inesperado")
         return respuesta(500, {"error": "Error interno"})
 

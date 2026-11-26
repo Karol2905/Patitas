@@ -7,7 +7,7 @@ CAMPOS_OBLIGATORIOS = ["fecha", "hora", "mascota", "especie", "dueno", "correo",
 
 HORA_APERTURA = time(8, 0)
 HORA_ULTIMA_CITA = time(17, 30)
-DOMINGO = 6 
+DOMINGO = 6
 PATRON_CORREO = re.compile(r"^[^@\s]+@[^@\s]+\.[^@\s]+$")
 
 
@@ -16,25 +16,21 @@ def hoy_en_colombia():
 
 
 def validar_cita(datos):
-    
+
     errores = []
 
-    
     for campo in CAMPOS_OBLIGATORIOS:
         valor = datos.get(campo)
         if not isinstance(valor, str) or not valor.strip():
             errores.append(f"El campo '{campo}' es obligatorio")
 
-    
     if datos.get("acepta_tratamiento_datos") is not True:
         errores.append("Debe aceptar el tratamiento de datos personales")
 
-    
     correo = datos.get("correo")
     if isinstance(correo, str) and correo.strip() and not PATRON_CORREO.match(correo.strip()):
         errores.append("El correo no tiene un formato válido")
 
-   
     errores.extend(_errores_de_fecha(datos.get("fecha")))
     errores.extend(_errores_de_hora(datos.get("hora")))
 
@@ -42,9 +38,9 @@ def validar_cita(datos):
 
 
 def _errores_de_fecha(texto):
-    
+
     if not isinstance(texto, str) or not texto.strip():
-        return [] 
+        return []
 
     try:
         fecha = date.fromisoformat(texto.strip())
@@ -60,9 +56,9 @@ def _errores_de_fecha(texto):
 
 
 def _errores_de_hora(texto):
-    
+
     if not isinstance(texto, str) or not texto.strip():
-        return [] 
+        return []
     try:
         hora = time.fromisoformat(texto.strip())
     except ValueError:
