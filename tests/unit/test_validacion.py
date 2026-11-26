@@ -1,8 +1,4 @@
-"""Pruebas de validacion.py."""
-
 from validacion import enmascarar_correo, enmascarar_telefono
-
-# --- enmascarar_correo (B) ---
 
 
 def test_enmascarar_correo_deja_primera_letra_y_dominio():
@@ -21,9 +17,6 @@ def test_enmascarar_correo_sin_arroba_lo_oculta_todo():
 def test_enmascarar_correo_vacio_o_none_no_falla():
     assert enmascarar_correo("") == ""
     assert enmascarar_correo(None) is None
-
-
-# --- enmascarar_telefono (B) ---
 
 
 def test_enmascarar_telefono_deja_ultimos_cuatro():

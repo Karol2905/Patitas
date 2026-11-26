@@ -1,5 +1,3 @@
-"""Pruebas de la base de pruebas: el fixture y el builder funcionan."""
-
 import json
 
 from eventos import armar_evento
@@ -20,7 +18,6 @@ def test_tabla_guarda_y_lee_por_pk(tabla):
 
 
 def test_cada_prueba_recibe_una_tabla_nueva(tabla):
-    # La prueba anterior guardó una cita; aquí no debe estar.
     assert tabla.scan()["Items"] == []
 
 

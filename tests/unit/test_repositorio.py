@@ -1,10 +1,7 @@
-"""Pruebas de repositorio.py contra la tabla falsa de moto."""
-
 import pytest
 
 
 def _cita(id_cita, fecha="2026-12-01", hora="09:30", estado="ACTIVA"):
-    """Arma una cita completa como quedaría guardada en DynamoDB."""
     return {
         "pk": f"{fecha}#{hora}",
         "id": id_cita,
@@ -20,9 +17,6 @@ def _cita(id_cita, fecha="2026-12-01", hora="09:30", estado="ACTIVA"):
         "creada_en": "2026-11-25T10:00:00",
         "consentimiento_en": "2026-11-25T10:00:00",
     }
-
-
-# --- listar (B) ---
 
 
 def test_listar_tabla_vacia_devuelve_lista_vacia(tabla):
@@ -68,9 +62,6 @@ def test_listar_ordena_por_fecha_y_hora(tabla):
     tabla.put_item(Item=_cita("temprano", fecha="2026-12-01", hora="08:00"))
 
     assert [c["id"] for c in repositorio.listar()] == ["temprano", "tarde", "otro-dia"]
-
-
-# --- cancelar (B) ---
 
 
 def test_cancelar_deja_estado_cancelada(tabla):
