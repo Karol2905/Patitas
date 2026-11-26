@@ -1,6 +1,9 @@
 import json
 import logging
 
+from repositorio import CitaNoEncontrada, cancelar, listar
+from validacion import enmascarar_correo, enmascarar_telefono
+
 logger = logging.getLogger()
 logger.setLevel(logging.INFO)
 
@@ -50,10 +53,23 @@ def crear_cita(event):
 
 
 def listar_citas(event):
-    """GET /citas?fecha=YYYY-MM-DD -> 200. (Persona B)"""
-    return respuesta(501, {"error": "No implementado"})
+    query = event.get("queryStringParameters") or {}
+    citas = listar(query.get("fecha"))
+    resultado = []
+    for cita in citas:
+        visible = {k: v for k, v in cita.items() if k != "pk"}
+        visible["correo"] = enmascarar_correo(cita.get("correo"))
+        visible["telefono"] = enmascarar_telefono(cita.get("telefono"))
+        resultado.append(visible)
+    return respuesta(200, resultado)
 
 
 def cancelar_cita(event):
-    """DELETE /citas/{id} -> 200 | 404. (Persona B)"""
-    return respuesta(501, {"error": "No implementado"})
+    parametros = event.get("pathParameters") or {}
+    id_cita = parametros.get("id") or event.get("path", "").split("/")[-1]
+    try:
+        cancelar(id_cita)
+    except CitaNoEncontrada:
+        return respuesta(404, {"error": "Cita no encontrada"})
+    logger.info("Cita cancelada id=%s", id_cita)
+    return respuesta(200, {"id": id_cita, "estado": "CANCELADA"})
