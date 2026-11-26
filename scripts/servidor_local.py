@@ -77,6 +77,11 @@ def cargar_ejemplos(repositorio):
         )
 
 
+class Servidor(ThreadingHTTPServer):
+    request_queue_size = 64
+    daemon_threads = True
+
+
 def crear_manejador(handler):
     class Manejador(BaseHTTPRequestHandler):
         def log_message(self, formato, *args):
@@ -147,7 +152,7 @@ def main():
     print(f"Patitas corriendo en http://localhost:{PUERTO}")
     print("Los datos estan en memoria: se borran al cerrar (Ctrl+C).")
     try:
-        ThreadingHTTPServer(("localhost", PUERTO), crear_manejador(handler)).serve_forever()
+        Servidor(("localhost", PUERTO), crear_manejador(handler)).serve_forever()
     except KeyboardInterrupt:
         pass
 
