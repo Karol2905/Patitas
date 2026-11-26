@@ -1,24 +1,21 @@
-"""Pruebas de validar_cita. Python puro: no necesitan el DynamoDB falso."""
-
 from datetime import date
 
 import pytest
 import validacion
 from validacion import validar_cita
 
-# Fijamos "hoy" en el martes 1 de diciembre de 2026 para que las pruebas no
-# dependan del día en que se corran.
+
 HOY = date(2026, 12, 1)
 
 
 @pytest.fixture(autouse=True)
 def hoy_fijo(monkeypatch):
-    """Antes de cada prueba, reemplaza hoy_en_colombia() por una que siempre devuelve HOY."""
+   
     monkeypatch.setattr(validacion, "hoy_en_colombia", lambda: HOY)
 
 
 def cita_valida(**cambios):
-    """Devuelve una cita válida. Con cambios=... se reemplazan campos para cada prueba."""
+    
     datos = {
         "fecha": "2026-12-02",  # miércoles, mañana
         "hora": "09:30",
