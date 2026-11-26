@@ -4,6 +4,11 @@
   --color-principal-suave: #f1ebfb;
   --color-menta: #c6e2d0;
   --color-menta-oscuro: #9ccbb0;
+  --color-menta-intenso: #74bf95;
+  --color-banner: #9c5aa0;
+  --color-banner-oscuro: #7a3f7f;
+  --color-coral: #ef7672;
+  --color-coral-oscuro: #dc5d59;
   --color-fondo: #f7f8fa;
   --color-superficie: #ffffff;
   --color-titulo: #0b1b3f;
@@ -97,6 +102,156 @@ svg {
 
 .encabezado {
   padding: 48px 0 8px;
+}
+
+.encabezado-lema {
+  margin: 20px 0 0;
+  font-size: 18px;
+  color: var(--color-texto-suave);
+}
+
+.banner {
+  position: relative;
+  display: grid;
+  grid-template-columns: 1fr minmax(0, 520px) 1fr;
+  align-items: end;
+  margin: 32px 0 8px;
+  min-height: 440px;
+  padding-bottom: 44px;
+  overflow: hidden;
+  background: var(--color-banner);
+  border-radius: 40px;
+}
+
+.banner-lineas {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  fill: none;
+  stroke: rgba(255, 255, 255, 0.55);
+  stroke-width: 2.5;
+  stroke-dasharray: 10 12;
+}
+
+.banner-mascota {
+  position: relative;
+  display: block;
+  max-height: 380px;
+  width: auto;
+  filter: drop-shadow(0 10px 18px rgba(11, 27, 63, 0.25));
+}
+
+.banner-gato {
+  justify-self: start;
+  margin-left: 0;
+}
+
+.banner-perro {
+  justify-self: end;
+  margin-right: 6%;
+}
+
+.banner-centro {
+  position: relative;
+  align-self: stretch;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 14px;
+  padding: 0 12px 28px;
+  text-align: center;
+}
+
+.banner-etiqueta {
+  padding: 12px 32px;
+  background: var(--color-superficie);
+  border-radius: 0 0 22px 22px;
+  font-family: var(--fuente-titulos);
+  font-weight: 800;
+  font-size: 18px;
+  letter-spacing: 0.03em;
+  text-transform: uppercase;
+  color: var(--color-banner-oscuro);
+}
+
+.banner-titulo {
+  margin-top: 6px;
+  font-size: clamp(30px, 3.6vw, 44px);
+  font-weight: 800;
+  line-height: 1.05;
+  text-transform: uppercase;
+  color: #fff;
+}
+
+.banner-destacado {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  padding: 14px 36px 18px;
+  background: var(--color-menta-intenso);
+  border-radius: 18px;
+  color: #fff;
+  font-family: var(--fuente-titulos);
+  line-height: 1;
+}
+
+.banner-destacado span {
+  font-size: 22px;
+  font-weight: 700;
+}
+
+.banner-destacado strong {
+  font-size: clamp(44px, 5vw, 64px);
+  font-weight: 800;
+  letter-spacing: -0.02em;
+}
+
+.banner-nube {
+  margin: 0;
+  padding: 10px 28px;
+  background: #ececf3;
+  border-radius: 999px;
+  font-family: var(--fuente-titulos);
+  font-weight: 700;
+  font-style: italic;
+  font-size: 18px;
+  color: var(--color-banner-oscuro);
+  transform: rotate(-2deg);
+}
+
+.banner-boton {
+  margin-top: 6px;
+  padding: 14px 40px;
+  background: var(--color-coral);
+  border-radius: 999px;
+  font-family: var(--fuente-titulos);
+  font-weight: 800;
+  font-size: 22px;
+  letter-spacing: 0.02em;
+  text-transform: uppercase;
+  text-decoration: none;
+  color: #fff;
+  box-shadow: 0 6px 16px rgba(11, 27, 63, 0.18);
+  transition: transform 0.15s, background 0.15s;
+}
+
+.banner-boton:hover {
+  background: var(--color-coral-oscuro);
+  transform: translateY(-1px);
+}
+
+.banner-pie {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  margin: 0;
+  padding: 10px 16px;
+  background: var(--color-menta-intenso);
+  text-align: center;
+  font-size: 15px;
+  color: #fff;
 }
 
 .encabezado h1 {
@@ -575,10 +730,10 @@ svg {
 }
 
 .citas {
-  margin: 0 -32px;
+  margin: 0 -32px 48px;
   padding: 56px 32px 64px;
   background: var(--color-menta);
-  border-radius: var(--radio-grande) var(--radio-grande) 0 0;
+  border-radius: var(--radio-grande);
 }
 
 .citas table {
@@ -713,14 +868,33 @@ svg {
   color: var(--color-texto-suave);
 }
 
-.pie {
-  padding: 24px 0;
-  background: var(--color-titulo);
-  color: #c9cfdb;
-  font-size: 14px;
-}
-
 @media (max-width: 960px) {
+  .banner {
+    grid-template-columns: 1fr 1fr;
+    grid-template-rows: auto auto;
+    padding-top: 0;
+  }
+
+  .banner-centro {
+    grid-column: 1 / -1;
+    grid-row: 1;
+    padding-bottom: 8px;
+  }
+
+  .banner-gato {
+    grid-row: 2;
+    grid-column: 1;
+  }
+
+  .banner-perro {
+    grid-row: 2;
+    grid-column: 2;
+  }
+
+  .banner-mascota {
+    max-height: 240px;
+  }
+
   .reserva {
     grid-template-columns: 1fr;
   }
@@ -738,8 +912,30 @@ svg {
   }
 
   .citas {
-    margin: 0 -20px;
+    margin: 0 -20px 32px;
     padding: 40px 20px;
+  }
+
+
+  .banner {
+    border-radius: 28px;
+  }
+
+  .banner-etiqueta {
+    font-size: 14px;
+    padding: 10px 20px;
+  }
+
+  .banner-destacado {
+    padding: 12px 24px 14px;
+  }
+
+  .banner-mascota {
+    max-height: 190px;
+  }
+
+  .banner-pie {
+    font-size: 13px;
   }
 
   .dias {
