@@ -586,6 +586,133 @@ svg {
   margin-top: 24px;
 }
 
+.citas-encabezado {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+}
+
+.citas-filtro {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 10px;
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--color-titulo);
+}
+
+.citas-filtro input {
+  height: 40px;
+  padding: 0 12px;
+  border: 1px solid var(--color-borde);
+  border-radius: var(--radio);
+  background: var(--color-superficie);
+  color: var(--color-titulo);
+  font: inherit;
+  font-weight: 400;
+}
+
+.boton-limpiar {
+  height: 40px;
+  padding: 0 12px;
+  border: 0;
+  background: transparent;
+  color: var(--color-titulo);
+  font: inherit;
+  font-weight: 600;
+  text-decoration: underline;
+  cursor: pointer;
+}
+
+#mensaje-citas {
+  margin: 24px 0 0;
+}
+
+.tabla-contenedor {
+  margin-top: 24px;
+  overflow-x: auto;
+  background: var(--color-superficie);
+  border-radius: var(--radio-grande);
+  box-shadow: var(--sombra);
+}
+
+.tabla-contenedor table {
+  margin-top: 0;
+  border-collapse: collapse;
+  font-size: 14px;
+}
+
+.tabla-contenedor th {
+  padding: 14px 16px;
+  background: var(--color-principal);
+  color: #fff;
+  font-weight: 600;
+  text-align: left;
+  white-space: nowrap;
+}
+
+.tabla-contenedor td {
+  padding: 12px 16px;
+  border-top: 1px solid var(--color-borde);
+  color: var(--color-titulo);
+  white-space: nowrap;
+}
+
+.cita-cancelada td {
+  color: var(--color-deshabilitado);
+}
+
+.estado {
+  display: inline-block;
+  padding: 2px 10px;
+  border-radius: 999px;
+  font-size: 13px;
+  font-weight: 600;
+}
+
+.estado-activa {
+  background: var(--color-exito-suave);
+  color: var(--color-exito);
+}
+
+.estado-cancelada {
+  background: var(--color-borde);
+  color: var(--color-texto-suave);
+}
+
+.boton-cancelar {
+  padding: 6px 14px;
+  border: 1px solid var(--color-error);
+  border-radius: var(--radio);
+  background: transparent;
+  color: var(--color-error);
+  font: inherit;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.15s, color 0.15s;
+}
+
+.boton-cancelar:hover:not(:disabled) {
+  background: var(--color-error);
+  color: #fff;
+}
+
+.boton-cancelar:disabled {
+  opacity: 0.6;
+  cursor: wait;
+}
+
+.citas-vacio {
+  margin: 0;
+  padding: 32px;
+  text-align: center;
+  color: var(--color-texto-suave);
+}
+
 .pie {
   padding: 24px 0;
   background: var(--color-titulo);

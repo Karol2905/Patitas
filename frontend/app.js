@@ -363,3 +363,115 @@ document.addEventListener("DOMContentLoaded", () => {
   pintarHoras();
   actualizarResumen();
 });
+
+const tablaCitas = {
+  cuerpo: document.querySelector("#tabla-citas tbody"),
+  filtro: document.getElementById("filtro-fecha"),
+  limpiar: document.getElementById("limpiar-filtro"),
+  vacio: document.getElementById("citas-vacio"),
+  mensaje: document.getElementById("mensaje-citas"),
+};
+
+function avisoCitas(tipo, texto) {
+  tablaCitas.mensaje.className = `mensaje mensaje-${tipo}`;
+  tablaCitas.mensaje.replaceChildren(crearElemento("strong", null, texto));
+  tablaCitas.mensaje.hidden = false;
+}
+
+function ocultarAvisoCitas() {
+  tablaCitas.mensaje.hidden = true;
+  tablaCitas.mensaje.replaceChildren();
+}
+
+function filaCita(cita) {
+  const activa = cita.estado === "ACTIVA";
+  const fila = crearElemento("tr", activa ? null : "cita-cancelada");
+
+  const valores = [
+    fechaLegible(cita.fecha),
+    cita.hora,
+    cita.mascota,
+    cita.especie,
+    cita.dueno,
+    cita.correo,
+    cita.telefono,
+  ];
+  valores.forEach((valor) => fila.append(crearElemento("td", null, valor ?? "")));
+
+  const celdaEstado = crearElemento("td");
+  celdaEstado.append(
+    crearElemento("span", `estado ${activa ? "estado-activa" : "estado-cancelada"}`, activa ? "Activa" : "Cancelada"),
+  );
+  fila.append(celdaEstado);
+
+  const celdaAccion = crearElemento("td");
+  if (activa) {
+    const boton = crearElemento("button", "boton-cancelar", "Cancelar");
+    boton.type = "button";
+    boton.addEventListener("click", () => cancelarCita(cita.id, boton));
+    celdaAccion.append(boton);
+  }
+  fila.append(celdaAccion);
+
+  return fila;
+}
+
+async function cargarCitas() {
+  if (!API_URL) {
+    avisoCitas("error", "No hay una URL de la API configurada en config.js");
+    return;
+  }
+
+  const fecha = tablaCitas.filtro.value;
+  const url = fecha ? `${API_URL}/citas?fecha=${encodeURIComponent(fecha)}` : `${API_URL}/citas`;
+
+  try {
+    const respuesta = await fetch(url);
+    if (!respuesta.ok) {
+      throw new Error(`HTTP ${respuesta.status}`);
+    }
+    const citas = await respuesta.json();
+    tablaCitas.cuerpo.replaceChildren(...citas.map(filaCita));
+    tablaCitas.vacio.hidden = citas.length > 0;
+  } catch {
+    tablaCitas.cuerpo.replaceChildren();
+    tablaCitas.vacio.hidden = true;
+    avisoCitas("error", "No se pudieron cargar las citas. Intenta de nuevo.");
+  }
+}
+
+async function cancelarCita(id, boton) {
+  boton.disabled = true;
+  ocultarAvisoCitas();
+
+  try {
+    const respuesta = await fetch(`${API_URL}/citas/${encodeURIComponent(id)}`, { method: "DELETE" });
+    if (respuesta.status === 200) {
+      avisoCitas("exito", "La cita fue cancelada");
+    } else if (respuesta.status === 404) {
+      avisoCitas("error", "La cita ya no existe");
+    } else {
+      throw new Error(`HTTP ${respuesta.status}`);
+    }
+    await cargarCitas();
+    pintarHoras();
+  } catch {
+    avisoCitas("error", "No se pudo cancelar la cita. Intenta de nuevo.");
+    boton.disabled = false;
+  }
+}
+
+tablaCitas.filtro.addEventListener("change", () => {
+  ocultarAvisoCitas();
+  cargarCitas();
+});
+
+tablaCitas.limpiar.addEventListener("click", () => {
+  tablaCitas.filtro.value = "";
+  ocultarAvisoCitas();
+  cargarCitas();
+});
+
+window.cargarCitas = cargarCitas;
+
+document.addEventListener("DOMContentLoaded", cargarCitas);
