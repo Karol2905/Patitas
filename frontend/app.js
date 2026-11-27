@@ -326,7 +326,7 @@ async function enviarCita(evento) {
         `Enviaremos un recordatorio a ${datos.correo}`,
       ]);
       if (typeof window.cargarCitas === "function") {
-        window.cargarCitas();
+        window.cargarCitas(datos.correo);
       }
     } else if (respuesta.status === 400) {
       mostrarMensaje("error", "Revisa los datos de la cita", cuerpo.errores || []);
@@ -366,11 +366,13 @@ document.addEventListener("DOMContentLoaded", () => {
 
 const tablaCitas = {
   cuerpo: document.querySelector("#tabla-citas tbody"),
-  filtro: document.getElementById("filtro-fecha"),
-  limpiar: document.getElementById("limpiar-filtro"),
+  correo: document.getElementById("correo-citas"),
+  ver: document.getElementById("ver-citas"),
   vacio: document.getElementById("citas-vacio"),
   mensaje: document.getElementById("mensaje-citas"),
 };
+
+let correoConsultado = "";
 
 function avisoCitas(tipo, texto) {
   tablaCitas.mensaje.className = `mensaje mensaje-${tipo}`;
@@ -387,15 +389,7 @@ function filaCita(cita) {
   const activa = cita.estado === "ACTIVA";
   const fila = crearElemento("tr", activa ? null : "cita-cancelada");
 
-  const valores = [
-    fechaLegible(cita.fecha),
-    cita.hora,
-    cita.mascota,
-    cita.especie,
-    cita.dueno,
-    cita.correo,
-    cita.telefono,
-  ];
+  const valores = [fechaLegible(cita.fecha), cita.hora, cita.mascota, cita.especie, cita.motivo];
   valores.forEach((valor) => fila.append(crearElemento("td", null, valor ?? "")));
 
   const celdaEstado = crearElemento("td");
@@ -406,38 +400,73 @@ function filaCita(cita) {
 
   const celdaAccion = crearElemento("td");
   if (activa) {
-    const boton = crearElemento("button", "boton-cancelar", "Cancelar");
-    boton.type = "button";
-    boton.addEventListener("click", () => cancelarCita(cita.id, boton));
-    celdaAccion.append(boton);
+    celdaAccion.append(botonCancelar(celdaAccion, cita.id));
   }
   fila.append(celdaAccion);
 
   return fila;
 }
 
-async function cargarCitas() {
+async function cargarCitas(correo) {
+  if (typeof correo === "string" && correo.trim()) {
+    tablaCitas.correo.value = correo.trim();
+  }
+  const valor = tablaCitas.correo.value.trim();
+  if (!valor) {
+    tablaCitas.cuerpo.replaceChildren();
+    tablaCitas.vacio.hidden = true;
+    return;
+  }
+
   if (!API_URL) {
     avisoCitas("error", "No hay una URL de la API configurada en config.js");
     return;
   }
 
-  const fecha = tablaCitas.filtro.value;
-  const url = fecha ? `${API_URL}/citas?fecha=${encodeURIComponent(fecha)}` : `${API_URL}/citas`;
-
   try {
-    const respuesta = await fetch(url);
+    const respuesta = await fetch(`${API_URL}/citas/consulta`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ correo: valor }),
+    });
     if (!respuesta.ok) {
       throw new Error(`HTTP ${respuesta.status}`);
     }
     const citas = await respuesta.json();
+    correoConsultado = valor;
     tablaCitas.cuerpo.replaceChildren(...citas.map(filaCita));
     tablaCitas.vacio.hidden = citas.length > 0;
   } catch {
     tablaCitas.cuerpo.replaceChildren();
     tablaCitas.vacio.hidden = true;
-    avisoCitas("error", "No se pudieron cargar las citas. Intenta de nuevo.");
+    avisoCitas("error", "No se pudieron cargar tus citas. Intenta de nuevo.");
   }
+}
+
+function botonCancelar(celda, id) {
+  const boton = crearElemento("button", "boton-cancelar", "Cancelar");
+  boton.type = "button";
+  boton.addEventListener("click", () => confirmarCancelacion(celda, id));
+  return boton;
+}
+
+function confirmarCancelacion(celda, id) {
+  ocultarAvisoCitas();
+  const caja = crearElemento("div", "cancelar-confirmacion");
+  const confirmar = crearElemento("button", "boton-cancelar", "Confirmar");
+  confirmar.type = "button";
+  const volver = crearElemento("button", "boton-volver", "Volver");
+  volver.type = "button";
+
+  confirmar.addEventListener("click", () => cancelarCita(id, confirmar));
+  volver.addEventListener("click", () => {
+    ocultarAvisoCitas();
+    celda.replaceChildren(botonCancelar(celda, id));
+  });
+
+  caja.append(confirmar, volver);
+  celda.replaceChildren(caja);
+  confirmar.focus();
 }
 
 async function cancelarCita(id, boton) {
@@ -445,33 +474,50 @@ async function cancelarCita(id, boton) {
   ocultarAvisoCitas();
 
   try {
-    const respuesta = await fetch(`${API_URL}/citas/${encodeURIComponent(id)}`, { method: "DELETE" });
+    const respuesta = await fetch(`${API_URL}/citas/${encodeURIComponent(id)}`, {
+      method: "DELETE",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ correo: correoConsultado }),
+    });
     if (respuesta.status === 200) {
       avisoCitas("exito", "La cita fue cancelada");
+      await cargarCitas();
+      pintarHoras();
+      return;
+    }
+    if (respuesta.status === 403) {
+      avisoCitas("error", "El correo no coincide con el de la cita");
+    } else if (respuesta.status === 400) {
+      avisoCitas("error", "Escribe el correo con el que agendaste la cita");
     } else if (respuesta.status === 404) {
       avisoCitas("error", "La cita ya no existe");
+      await cargarCitas();
+      return;
     } else {
       throw new Error(`HTTP ${respuesta.status}`);
     }
-    await cargarCitas();
-    pintarHoras();
   } catch {
     avisoCitas("error", "No se pudo cancelar la cita. Intenta de nuevo.");
-    boton.disabled = false;
   }
+  boton.disabled = false;
 }
 
-tablaCitas.filtro.addEventListener("change", () => {
+function verMisCitas() {
   ocultarAvisoCitas();
+  if (!tablaCitas.correo.value.trim()) {
+    avisoCitas("error", "Escribe el correo con el que agendaste la cita");
+    tablaCitas.correo.focus();
+    return;
+  }
   cargarCitas();
-});
+}
 
-tablaCitas.limpiar.addEventListener("click", () => {
-  tablaCitas.filtro.value = "";
-  ocultarAvisoCitas();
-  cargarCitas();
+tablaCitas.ver.addEventListener("click", verMisCitas);
+
+tablaCitas.correo.addEventListener("keydown", (evento) => {
+  if (evento.key === "Enter") {
+    verMisCitas();
+  }
 });
 
 window.cargarCitas = cargarCitas;
-
-document.addEventListener("DOMContentLoaded", cargarCitas);

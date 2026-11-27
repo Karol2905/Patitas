@@ -22,7 +22,7 @@
         </svg>
         <span>patitas</span>
       </a>
-      <a class="boton-secundario" href="#seccion-citas">Ver citas</a>
+      <a class="boton-secundario" href="#seccion-citas">Mis citas</a>
     </div>
   </header>
 
@@ -205,11 +205,11 @@
 
     <section id="seccion-citas" class="citas">
       <div class="citas-encabezado">
-        <h2>Citas agendadas</h2>
+        <h2>Mis citas</h2>
         <div class="citas-filtro">
-          <label for="filtro-fecha">Filtrar por fecha</label>
-          <input type="date" id="filtro-fecha">
-          <button type="button" id="limpiar-filtro" class="boton-limpiar">Ver todas</button>
+          <label for="correo-citas">Correo con el que agendaste</label>
+          <input type="email" id="correo-citas" placeholder="tucorreo@ejemplo.com" autocomplete="email">
+          <button type="button" id="ver-citas" class="boton-limpiar">Ver mis citas</button>
         </div>
       </div>
 
@@ -223,16 +223,14 @@
               <th>Hora</th>
               <th>Mascota</th>
               <th>Especie</th>
-              <th>Dueño</th>
-              <th>Correo</th>
-              <th>Teléfono</th>
+              <th>Motivo</th>
               <th>Estado</th>
               <th>Acción</th>
             </tr>
           </thead>
           <tbody></tbody>
         </table>
-        <p id="citas-vacio" class="citas-vacio" hidden>No hay citas</p>
+        <p id="citas-vacio" class="citas-vacio" hidden>No hay citas con ese correo</p>
       </div>
     </section>
   </main>
