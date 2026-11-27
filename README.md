@@ -36,7 +36,7 @@ flowchart LR
 **Decisiones clave:**
 - **Sin doble reserva.** `guardar` escribe con la condición `attribute_not_exists(pk)`. Si dos personas piden la misma franja a la vez, solo una lo logra; la otra recibe `409`.
 - **Cancelar libera la franja sin perder el historial.** Una transacción copia la cita a `pk = CANCELADA#<id>` con `estado = CANCELADA` y borra el registro de la franja.
-- **Datos personales.** Se exige aceptar el tratamiento de datos (`consentimiento_en`), el listado devuelve el correo y el teléfono enmascarados (`j***@gmail.com`, `******4567`) y los logs solo registran el id de la cita.
+- **Datos personales.** Se exige aceptar el tratamiento de datos (`consentimiento_en`), el listado devuelve el nombre, el correo y el teléfono enmascarados (`J*** P***`, `j***@gmail.com`, `******4567`), solo se puede cancelar una cita con el correo con el que se agendó y los logs solo registran el id de la cita.
 
 ## Estructura
 
@@ -106,8 +106,8 @@ Base: la salida `url_api` de Terraform (o `http://localhost:8000/api` con el ser
 | Método y ruta | Descripción | Respuestas |
 |---|---|---|
 | `POST /citas` | Agenda una cita | `201` cita creada · `400` `{"errores": [...]}` · `409` franja ocupada |
-| `GET /citas?fecha=AAAA-MM-DD` | Lista las citas, ordenadas por fecha y hora. `fecha` es opcional | `200` lista con correo y teléfono enmascarados |
-| `DELETE /citas/{id}` | Cancela una cita y libera su franja | `200` `{"id", "estado": "CANCELADA"}` · `404` no existe |
+| `GET /citas?fecha=AAAA-MM-DD` | Lista las citas, ordenadas por fecha y hora. `fecha` es opcional | `200` lista con nombre, correo y teléfono enmascarados |
+| `DELETE /citas/{id}` | Cancela una cita y libera su franja. El cuerpo lleva `{"correo": "..."}` con el correo con el que se agendó | `200` `{"id", "estado": "CANCELADA"}` · `400` falta el correo · `403` el correo no coincide · `404` no existe |
 | `OPTIONS` (cualquier ruta) | Preflight de CORS | `200` |
 
 Ejemplo de `POST /citas`:
@@ -184,7 +184,7 @@ Si alguno falla, el pull request no se puede fusionar.
 
 1. **Lint y pruebas** otra vez sobre el commit que se va a desplegar.
 2. **Desplegar en Floci**: levanta Floci, `terraform apply` con `dev.tfvars` o `prod.tfvars`, y lee las URL de salida.
-3. **Smoke test** (`scripts/smoke_test.py`): el sitio responde, se crea una cita, la misma franja responde `409`, la cita aparece con el correo enmascarado, se cancela y la franja se puede volver a agendar.
+3. **Smoke test** (`scripts/smoke_test.py`): el sitio responde, se crea una cita, la misma franja responde `409`, la cita aparece con el correo enmascarado, cancelar con otro correo responde `403`, se cancela con el correo de la cita y la franja se puede volver a agendar.
 4. **Resumen** con la versión y las URL en la página de la ejecución.
 
 El despliegue a `prod` usa el ambiente `prod` de GitHub, que pide la aprobación de uno de los integrantes antes de ejecutarse.
