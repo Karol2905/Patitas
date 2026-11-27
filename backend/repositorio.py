@@ -66,6 +66,10 @@ def _mismo_correo(a, b):
     return str(a or "").strip().lower() == str(b or "").strip().lower()
 
 
+def listar_por_correo(correo):
+    return [c for c in listar() if _mismo_correo(c.get("correo"), correo)]
+
+
 def cancelar(id_cita, correo):
     cita = next((c for c in _todas_las_citas() if c.get("id") == id_cita), None)
     if cita is None:

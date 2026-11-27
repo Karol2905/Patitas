@@ -32,10 +32,28 @@ def _llamar(*args, **kwargs):
     return resp, json.loads(resp["body"])
 
 
-def test_get_citas_devuelve_200_con_datos_enmascarados(tabla):
+def test_get_citas_solo_devuelve_fecha_hora_y_estado(tabla):
     tabla.put_item(Item=_cita("1"))
 
     resp, citas = _llamar("GET", "/citas")
+
+    assert resp["statusCode"] == 200
+    assert citas == [{"fecha": "2026-12-01", "hora": "09:30", "estado": "ACTIVA"}]
+
+
+def test_get_citas_no_incluye_las_canceladas(tabla):
+    tabla.put_item(Item=_cita("abc"))
+
+    _llamar("DELETE", "/citas/abc", body=CORREO, path_params={"id": "abc"})
+    _, citas = _llamar("GET", "/citas")
+
+    assert citas == []
+
+
+def test_consulta_devuelve_las_citas_del_correo_enmascaradas(tabla):
+    tabla.put_item(Item=_cita("1"))
+
+    resp, citas = _llamar("POST", "/citas/consulta", body=CORREO)
 
     assert resp["statusCode"] == 200
     assert len(citas) == 1
@@ -45,12 +63,38 @@ def test_get_citas_devuelve_200_con_datos_enmascarados(tabla):
     assert citas[0]["dueno"] == "J*** P***"
 
 
-def test_get_citas_no_expone_la_llave_interna(tabla):
+def test_consulta_no_expone_la_llave_interna(tabla):
     tabla.put_item(Item=_cita("1"))
 
-    _, citas = _llamar("GET", "/citas")
+    _, citas = _llamar("POST", "/citas/consulta", body=CORREO)
 
     assert "pk" not in citas[0]
+
+
+def test_consulta_solo_devuelve_las_citas_de_ese_correo(tabla):
+    tabla.put_item(Item=_cita("1"))
+    otra = _cita("2", hora="10:00", mascota="Pachito")
+    otra["correo"] = "otro@gmail.com"
+    tabla.put_item(Item=otra)
+
+    _, citas = _llamar("POST", "/citas/consulta", body=OTRO_CORREO)
+
+    assert [c["id"] for c in citas] == ["2"]
+
+
+def test_consulta_ignora_mayusculas_y_espacios_del_correo(tabla):
+    tabla.put_item(Item=_cita("1"))
+
+    _, citas = _llamar("POST", "/citas/consulta", body={"correo": " Juan@Gmail.com "})
+
+    assert [c["id"] for c in citas] == ["1"]
+
+
+def test_consulta_sin_correo_devuelve_400(tabla):
+    resp, body = _llamar("POST", "/citas/consulta", body={})
+
+    assert resp["statusCode"] == 400
+    assert "correo" in body["error"]
 
 
 def test_get_citas_sin_citas_devuelve_lista_vacia(tabla):
@@ -67,8 +111,7 @@ def test_get_citas_con_fecha_filtra(tabla):
     resp, citas = _llamar("GET", "/citas", query={"fecha": "2026-12-02"})
 
     assert resp["statusCode"] == 200
-    assert [c["id"] for c in citas] == ["2"]
-    assert citas[0]["mascota"] == "Laika"
+    assert [(c["fecha"], c["hora"]) for c in citas] == [("2026-12-02", "09:30")]
 
 
 def test_delete_cita_existente_devuelve_200(tabla):
@@ -108,7 +151,7 @@ def test_delete_con_otro_correo_devuelve_403_y_no_cancela(tabla):
     tabla.put_item(Item=_cita("abc"))
 
     resp, body = _llamar("DELETE", "/citas/abc", body=OTRO_CORREO, path_params={"id": "abc"})
-    _, citas = _llamar("GET", "/citas")
+    _, citas = _llamar("POST", "/citas/consulta", body=CORREO)
 
     assert resp["statusCode"] == 403
     assert body == {"error": "El correo no coincide con el de la cita"}
@@ -123,11 +166,11 @@ def test_delete_con_cuerpo_invalido_devuelve_400(tabla):
     assert resp["statusCode"] == 400
 
 
-def test_delete_y_luego_get_muestra_la_cita_cancelada(tabla):
+def test_delete_y_luego_consulta_muestra_la_cita_cancelada(tabla):
     tabla.put_item(Item=_cita("abc"))
 
     _llamar("DELETE", "/citas/abc", body=CORREO, path_params={"id": "abc"})
-    _, citas = _llamar("GET", "/citas")
+    _, citas = _llamar("POST", "/citas/consulta", body=CORREO)
 
     assert [(c["id"], c["estado"]) for c in citas] == [("abc", "CANCELADA")]
 
@@ -143,6 +186,7 @@ def test_toda_respuesta_trae_cors(tabla):
 
     respuestas = [
         _llamar("GET", "/citas")[0],
+        _llamar("POST", "/citas/consulta", body=CORREO)[0],
         _llamar("DELETE", "/citas/abc", body=CORREO, path_params={"id": "abc"})[0],
         _llamar("DELETE", "/citas/x", path_params={"id": "x"})[0],
         _llamar("OPTIONS", "/citas")[0],
@@ -157,6 +201,7 @@ def test_los_logs_no_tienen_datos_personales(tabla, caplog):
 
     with caplog.at_level("INFO"):
         _llamar("GET", "/citas")
+        _llamar("POST", "/citas/consulta", body=CORREO)
         _llamar("DELETE", "/citas/abc", body=CORREO, path_params={"id": "abc"})
 
     assert "juan@gmail.com" not in caplog.text

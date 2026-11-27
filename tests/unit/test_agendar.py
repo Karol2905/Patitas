@@ -145,13 +145,23 @@ def test_post_en_franja_ocupada_devuelve_409(tabla, hoy_fijo):
     assert resp["statusCode"] == 409
 
 
-def test_post_y_luego_get_muestra_la_cita_enmascarada(tabla, hoy_fijo):
+def test_post_y_luego_get_muestra_la_franja_ocupada(tabla, hoy_fijo):
     from handler import lambda_handler
 
     lambda_handler(armar_evento("POST", "/citas", body=datos_cita()), None)
     resp = lambda_handler(armar_evento("GET", "/citas", query={"fecha": "2026-12-02"}), None)
 
     citas = json.loads(resp["body"])
+    assert citas == [{"fecha": "2026-12-02", "hora": datos_cita()["hora"], "estado": "ACTIVA"}]
+
+
+def test_post_y_luego_consulta_muestra_la_cita_enmascarada(tabla, hoy_fijo):
+    from handler import lambda_handler
+
+    lambda_handler(armar_evento("POST", "/citas", body=datos_cita()), None)
+    consulta = armar_evento("POST", "/citas/consulta", body={"correo": datos_cita()["correo"]})
+    citas = json.loads(lambda_handler(consulta, None)["body"])
+
     assert len(citas) == 1
     assert citas[0]["mascota"] == "Pachito"
     assert "***" in citas[0]["correo"]

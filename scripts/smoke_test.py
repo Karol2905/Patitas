@@ -67,9 +67,20 @@ def main():
     verificar(estado == 409, f"POST /citas en la misma franja responde 409 ({estado})")
 
     estado, texto = pedir("GET", f"{url_api}/citas?fecha={fecha}")
-    citas = json.loads(texto) if estado == 200 else []
-    encontrada = next((c for c in citas if c.get("id") == id_cita), None)
-    verificar(encontrada is not None, f"GET /citas lista la cita creada ({estado})")
+    ocupadas = json.loads(texto) if estado == 200 else []
+    verificar(
+        any(c.get("hora") == hora for c in ocupadas),
+        f"GET /citas muestra la franja ocupada ({estado})",
+    )
+    verificar(
+        all(set(c) == {"fecha", "hora", "estado"} for c in ocupadas),
+        "GET /citas no expone datos personales",
+    )
+
+    estado, texto = pedir("POST", f"{url_api}/citas/consulta", {"correo": cita["correo"]})
+    mias = json.loads(texto) if estado == 200 else []
+    encontrada = next((c for c in mias if c.get("id") == id_cita), None)
+    verificar(encontrada is not None, f"POST /citas/consulta devuelve la cita ({estado})")
     verificar("***" in encontrada.get("correo", ""), "El correo aparece enmascarado")
 
     estado, _ = pedir("DELETE", f"{url_api}/citas/{id_cita}", {"correo": "otro@patitas.co"})

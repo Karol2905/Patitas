@@ -179,3 +179,14 @@ def test_cancelar_ignora_mayusculas_y_espacios_del_correo(tabla):
     repositorio.cancelar("abc", "  Juan@Gmail.com ")
 
     assert tabla.get_item(Key={"pk": "CANCELADA#abc"})["Item"]["estado"] == "CANCELADA"
+
+
+def test_listar_por_correo_devuelve_solo_las_de_ese_correo(tabla):
+    import repositorio
+
+    tabla.put_item(Item=_cita("1"))
+    otra = _cita("2", hora="10:00", mascota="Mono")
+    otra["correo"] = "otro@gmail.com"
+    tabla.put_item(Item=otra)
+
+    assert [c["id"] for c in repositorio.listar_por_correo("JUAN@gmail.com")] == ["1"]
