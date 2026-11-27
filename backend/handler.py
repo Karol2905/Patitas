@@ -1,7 +1,15 @@
 import json
 import logging
 
-from repositorio import CitaNoEncontrada, CorreoNoCoincide, FranjaOcupada, cancelar, guardar, listar
+from repositorio import (
+    CitaNoEncontrada,
+    CorreoNoCoincide,
+    FranjaOcupada,
+    cancelar,
+    guardar,
+    listar,
+    listar_por_correo,
+)
 from validacion import enmascarar_correo, enmascarar_nombre, enmascarar_telefono, validar_cita
 
 logger = logging.getLogger()
@@ -36,6 +44,8 @@ def lambda_handler(event, context):
             return crear_cita(event)
         elif path == "/citas" and metodo == "GET":
             return listar_citas(event)
+        elif path == "/citas/consulta" and metodo == "POST":
+            return consultar_citas(event)
         elif path.startswith("/citas/") and metodo == "DELETE":
             return cancelar_cita(event)
         else:
@@ -72,9 +82,31 @@ def crear_cita(event):
 
 def listar_citas(event):
     query = event.get("queryStringParameters") or {}
-    citas = listar(query.get("fecha"))
+    ocupadas = [
+        {"fecha": cita.get("fecha"), "hora": cita.get("hora"), "estado": cita.get("estado")}
+        for cita in listar(query.get("fecha"))
+        if cita.get("estado") == "ACTIVA"
+    ]
+    return respuesta(200, ocupadas)
+
+
+def _correo_del_cuerpo(event):
+    try:
+        datos = json.loads(event.get("body") or "{}")
+    except json.JSONDecodeError:
+        return None
+    correo = datos.get("correo") if isinstance(datos, dict) else None
+    if not correo or not str(correo).strip():
+        return None
+    return str(correo)
+
+
+def consultar_citas(event):
+    correo = _correo_del_cuerpo(event)
+    if correo is None:
+        return respuesta(400, {"error": "Escribe el correo con el que agendaste la cita"})
     resultado = []
-    for cita in citas:
+    for cita in listar_por_correo(correo):
         visible = {k: v for k, v in cita.items() if k != "pk"}
         visible["dueno"] = enmascarar_nombre(cita.get("dueno"))
         visible["correo"] = enmascarar_correo(cita.get("correo"))
@@ -86,12 +118,8 @@ def listar_citas(event):
 def cancelar_cita(event):
     parametros = event.get("pathParameters") or {}
     id_cita = parametros.get("id") or event.get("path", "").split("/")[-1]
-    try:
-        datos = json.loads(event.get("body") or "{}")
-    except json.JSONDecodeError:
-        datos = {}
-    correo = datos.get("correo") if isinstance(datos, dict) else None
-    if not correo or not str(correo).strip():
+    correo = _correo_del_cuerpo(event)
+    if correo is None:
         return respuesta(400, {"error": "Escribe el correo con el que agendaste la cita"})
     try:
         cancelar(id_cita, correo)
