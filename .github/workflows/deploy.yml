@@ -65,7 +65,7 @@ jobs:
         run: |
           docker run -d --name floci -p 4566:4566 \
             -v /var/run/docker.sock:/var/run/docker.sock \
-            floci/floci:latest
+            floci/floci@sha256:a0fbf944d7f338cc0856f1ef83831ea749ff2be71956eb7a7fce08fc21458e19
           for intento in $(seq 1 30); do
             if curl -sf http://localhost:4566/_localstack/health > /dev/null; then
               echo "Floci listo"
