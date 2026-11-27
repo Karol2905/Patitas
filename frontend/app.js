@@ -406,10 +406,7 @@ function filaCita(cita) {
 
   const celdaAccion = crearElemento("td");
   if (activa) {
-    const boton = crearElemento("button", "boton-cancelar", "Cancelar");
-    boton.type = "button";
-    boton.addEventListener("click", () => cancelarCita(cita.id, boton));
-    celdaAccion.append(boton);
+    celdaAccion.append(botonCancelar(celdaAccion, cita.id));
   }
   fila.append(celdaAccion);
 
@@ -440,25 +437,81 @@ async function cargarCitas() {
   }
 }
 
-async function cancelarCita(id, boton) {
+function botonCancelar(celda, id) {
+  const boton = crearElemento("button", "boton-cancelar", "Cancelar");
+  boton.type = "button";
+  boton.addEventListener("click", () => pedirCorreo(celda, id));
+  return boton;
+}
+
+function pedirCorreo(celda, id) {
+  ocultarAvisoCitas();
+  const caja = crearElemento("div", "cancelar-confirmacion");
+  const campo = crearElemento("input", "campo-cancelar");
+  campo.type = "email";
+  campo.placeholder = "Correo de la cita";
+  campo.autocomplete = "email";
+  campo.setAttribute("aria-label", "Correo con el que agendaste la cita");
+  const confirmar = crearElemento("button", "boton-cancelar", "Confirmar");
+  confirmar.type = "button";
+  const volver = crearElemento("button", "boton-volver", "Volver");
+  volver.type = "button";
+
+  confirmar.addEventListener("click", () => cancelarCita(id, campo, confirmar));
+  campo.addEventListener("keydown", (evento) => {
+    if (evento.key === "Enter") {
+      cancelarCita(id, campo, confirmar);
+    }
+  });
+  volver.addEventListener("click", () => {
+    ocultarAvisoCitas();
+    celda.replaceChildren(botonCancelar(celda, id));
+  });
+
+  caja.append(campo, confirmar, volver);
+  celda.replaceChildren(caja);
+  campo.focus();
+}
+
+async function cancelarCita(id, campo, boton) {
+  const correo = campo.value.trim();
+  if (!correo) {
+    avisoCitas("error", "Escribe el correo con el que agendaste la cita");
+    campo.focus();
+    return;
+  }
+
   boton.disabled = true;
   ocultarAvisoCitas();
 
   try {
-    const respuesta = await fetch(`${API_URL}/citas/${encodeURIComponent(id)}`, { method: "DELETE" });
+    const respuesta = await fetch(`${API_URL}/citas/${encodeURIComponent(id)}`, {
+      method: "DELETE",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ correo }),
+    });
     if (respuesta.status === 200) {
       avisoCitas("exito", "La cita fue cancelada");
+      await cargarCitas();
+      pintarHoras();
+      return;
+    }
+    if (respuesta.status === 403) {
+      avisoCitas("error", "El correo no coincide con el de la cita");
+    } else if (respuesta.status === 400) {
+      avisoCitas("error", "Escribe el correo con el que agendaste la cita");
     } else if (respuesta.status === 404) {
       avisoCitas("error", "La cita ya no existe");
+      await cargarCitas();
+      return;
     } else {
       throw new Error(`HTTP ${respuesta.status}`);
     }
-    await cargarCitas();
-    pintarHoras();
   } catch {
     avisoCitas("error", "No se pudo cancelar la cita. Intenta de nuevo.");
-    boton.disabled = false;
   }
+  boton.disabled = false;
+  campo.focus();
 }
 
 tablaCitas.filtro.addEventListener("change", () => {

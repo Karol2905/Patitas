@@ -861,6 +861,43 @@ svg {
   cursor: wait;
 }
 
+.cancelar-confirmacion {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px 10px;
+  width: 170px;
+}
+
+.campo-cancelar {
+  width: 100%;
+  height: 32px;
+  padding: 0 10px;
+  border: 1px solid var(--color-borde);
+  border-radius: var(--radio);
+  background: var(--color-superficie);
+  color: var(--color-titulo);
+  font: inherit;
+  font-size: 13px;
+}
+
+.campo-cancelar:focus {
+  outline: 2px solid var(--color-principal-suave);
+  border-color: var(--color-principal);
+}
+
+.boton-volver {
+  padding: 6px 4px;
+  border: 0;
+  background: transparent;
+  color: var(--color-texto-suave);
+  font: inherit;
+  font-size: 13px;
+  font-weight: 600;
+  text-decoration: underline;
+  cursor: pointer;
+}
+
 .citas-vacio {
   margin: 0;
   padding: 32px;

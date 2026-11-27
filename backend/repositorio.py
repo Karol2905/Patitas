@@ -16,6 +16,10 @@ class CitaNoEncontrada(Exception):
     pass
 
 
+class CorreoNoCoincide(Exception):
+    pass
+
+
 CAMPOS_DE_LA_CITA = ["fecha", "hora", "mascota", "especie", "dueno", "correo", "telefono", "motivo"]
 
 
@@ -58,10 +62,16 @@ def listar(fecha=None):
     return sorted(citas, key=lambda c: (c.get("fecha", ""), c.get("hora", "")))
 
 
-def cancelar(id_cita):
+def _mismo_correo(a, b):
+    return str(a or "").strip().lower() == str(b or "").strip().lower()
+
+
+def cancelar(id_cita, correo):
     cita = next((c for c in _todas_las_citas() if c.get("id") == id_cita), None)
     if cita is None:
         raise CitaNoEncontrada(id_cita)
+    if not _mismo_correo(cita.get("correo"), correo):
+        raise CorreoNoCoincide(id_cita)
     if cita.get("estado") == "CANCELADA":
         return
 

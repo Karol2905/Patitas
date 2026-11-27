@@ -2,6 +2,8 @@ import json
 
 from eventos import armar_evento
 
+CORREO = {"correo": "juan@gmail.com"}
+OTRO_CORREO = {"correo": "otro@gmail.com"}
 ESPECIES = {"Pachito": "Gato", "Nina": "Perro", "Laika": "Perro", "Mono": "Perro"}
 
 
@@ -40,6 +42,7 @@ def test_get_citas_devuelve_200_con_datos_enmascarados(tabla):
     assert "***" in citas[0]["correo"]
     assert citas[0]["correo"] == "j***@gmail.com"
     assert citas[0]["telefono"] == "******4567"
+    assert citas[0]["dueno"] == "J*** P***"
 
 
 def test_get_citas_no_expone_la_llave_interna(tabla):
@@ -71,7 +74,7 @@ def test_get_citas_con_fecha_filtra(tabla):
 def test_delete_cita_existente_devuelve_200(tabla):
     tabla.put_item(Item=_cita("abc"))
 
-    resp, body = _llamar("DELETE", "/citas/abc", path_params={"id": "abc"})
+    resp, body = _llamar("DELETE", "/citas/abc", body=CORREO, path_params={"id": "abc"})
 
     assert resp["statusCode"] == 200
     assert body == {"id": "abc", "estado": "CANCELADA"}
@@ -80,22 +83,50 @@ def test_delete_cita_existente_devuelve_200(tabla):
 def test_delete_toma_el_id_del_path_si_no_hay_path_params(tabla):
     tabla.put_item(Item=_cita("abc"))
 
-    resp, _ = _llamar("DELETE", "/citas/abc")
+    resp, _ = _llamar("DELETE", "/citas/abc", body=CORREO)
 
     assert resp["statusCode"] == 200
 
 
 def test_delete_cita_inexistente_devuelve_404(tabla):
-    resp, body = _llamar("DELETE", "/citas/no-existe", path_params={"id": "no-existe"})
+    resp, body = _llamar("DELETE", "/citas/no-existe", body=CORREO, path_params={"id": "no-existe"})
 
     assert resp["statusCode"] == 404
     assert body == {"error": "Cita no encontrada"}
 
 
+def test_delete_sin_correo_devuelve_400(tabla):
+    tabla.put_item(Item=_cita("abc"))
+
+    resp, body = _llamar("DELETE", "/citas/abc", path_params={"id": "abc"})
+
+    assert resp["statusCode"] == 400
+    assert "correo" in body["error"]
+
+
+def test_delete_con_otro_correo_devuelve_403_y_no_cancela(tabla):
+    tabla.put_item(Item=_cita("abc"))
+
+    resp, body = _llamar("DELETE", "/citas/abc", body=OTRO_CORREO, path_params={"id": "abc"})
+    _, citas = _llamar("GET", "/citas")
+
+    assert resp["statusCode"] == 403
+    assert body == {"error": "El correo no coincide con el de la cita"}
+    assert citas[0]["estado"] == "ACTIVA"
+
+
+def test_delete_con_cuerpo_invalido_devuelve_400(tabla):
+    tabla.put_item(Item=_cita("abc"))
+
+    resp, _ = _llamar("DELETE", "/citas/abc", body="no es json", path_params={"id": "abc"})
+
+    assert resp["statusCode"] == 400
+
+
 def test_delete_y_luego_get_muestra_la_cita_cancelada(tabla):
     tabla.put_item(Item=_cita("abc"))
 
-    _llamar("DELETE", "/citas/abc", path_params={"id": "abc"})
+    _llamar("DELETE", "/citas/abc", body=CORREO, path_params={"id": "abc"})
     _, citas = _llamar("GET", "/citas")
 
     assert [(c["id"], c["estado"]) for c in citas] == [("abc", "CANCELADA")]
@@ -112,7 +143,7 @@ def test_toda_respuesta_trae_cors(tabla):
 
     respuestas = [
         _llamar("GET", "/citas")[0],
-        _llamar("DELETE", "/citas/abc", path_params={"id": "abc"})[0],
+        _llamar("DELETE", "/citas/abc", body=CORREO, path_params={"id": "abc"})[0],
         _llamar("DELETE", "/citas/x", path_params={"id": "x"})[0],
         _llamar("OPTIONS", "/citas")[0],
     ]
@@ -126,7 +157,7 @@ def test_los_logs_no_tienen_datos_personales(tabla, caplog):
 
     with caplog.at_level("INFO"):
         _llamar("GET", "/citas")
-        _llamar("DELETE", "/citas/abc", path_params={"id": "abc"})
+        _llamar("DELETE", "/citas/abc", body=CORREO, path_params={"id": "abc"})
 
     assert "juan@gmail.com" not in caplog.text
     assert "3001234567" not in caplog.text

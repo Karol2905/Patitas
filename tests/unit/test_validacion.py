@@ -1,4 +1,4 @@
-from validacion import enmascarar_correo, enmascarar_telefono
+from validacion import enmascarar_correo, enmascarar_nombre, enmascarar_telefono
 
 
 def test_enmascarar_correo_deja_primera_letra_y_dominio():
@@ -31,3 +31,12 @@ def test_enmascarar_telefono_corto_lo_oculta_todo():
 def test_enmascarar_telefono_vacio_o_none_no_falla():
     assert enmascarar_telefono("") == ""
     assert enmascarar_telefono(None) is None
+
+
+def test_enmascarar_nombre_deja_la_inicial_de_cada_palabra():
+    assert enmascarar_nombre("Karol Estupiñán") == "K*** E***"
+
+
+def test_enmascarar_nombre_vacio_o_none_no_falla():
+    assert enmascarar_nombre("") == ""
+    assert enmascarar_nombre(None) is None

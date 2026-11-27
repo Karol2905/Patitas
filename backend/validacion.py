@@ -87,3 +87,9 @@ def enmascarar_telefono(tel):
     if len(tel) <= 4:
         return "*" * len(tel)
     return "*" * (len(tel) - 4) + tel[-4:]
+
+
+def enmascarar_nombre(nombre):
+    if not nombre:
+        return nombre
+    return " ".join(palabra[:1] + "***" for palabra in str(nombre).split())

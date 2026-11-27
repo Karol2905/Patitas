@@ -72,7 +72,7 @@ def test_franja_cancelada_se_puede_volver_a_agendar(tabla):
     import repositorio
 
     cita = repositorio.guardar(datos_cita())
-    repositorio.cancelar(cita["id"])
+    repositorio.cancelar(cita["id"], "ana@gmail.com")
 
     nueva = repositorio.guardar(datos_cita(mascota="Nina"))
 
