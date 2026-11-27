@@ -38,6 +38,17 @@ flowchart LR
 - **Cancelar libera la franja sin perder el historial.** Una transacción copia la cita a `pk = CANCELADA#<id>` con `estado = CANCELADA` y borra el registro de la franja.
 - **Datos personales.** Se exige aceptar el tratamiento de datos (`consentimiento_en`), el listado público solo muestra qué franjas están ocupadas (fecha, hora y estado), cada persona ve sus citas escribiendo su correo y las recibe con el nombre, el correo y el teléfono enmascarados (`J*** P***`, `j***@gmail.com`, `******4567`), solo se puede cancelar una cita con el correo con el que se agendó y los logs solo registran el id de la cita.
 
+## Documentación
+
+| Documento | Archivo |
+|---|---|
+| Diseño de alto nivel (HLD) con las decisiones de arquitectura (ADR) | [`docs/HLD.pdf`](docs/HLD.pdf) |
+| Diagramas: contexto, arquitectura, red y seguridad, y pipeline | [`docs/diagramas/`](docs/diagramas/) (editable en [`diagramas_patitas.drawio`](docs/diagramas/diagramas_patitas.drawio)) |
+| Modelo de costos y FinOps | [`docs/Costos_Patitas.xlsx`](docs/Costos_Patitas.xlsx) |
+| Estimación en la AWS Pricing Calculator | [`docs/Costos_Patitas.pdf`](docs/Costos_Patitas.pdf) · [enlace](https://calculator.aws/#/estimate?id=413de916066a2f2462be4eac178ab949c1e3d07c) |
+| Presentación | [`docs/Presentacion_Patitas.pptx`](docs/Presentacion_Patitas.pptx) |
+| Reglas de Checkov omitidas y su razón | [`docs/checkov.md`](docs/checkov.md) |
+
 ## Estructura
 
 ```
@@ -47,7 +58,8 @@ infra/              Terraform: tabla, Lambda, API, sitio y monitoreo; dev.tfvars
 tests/              Pruebas con pytest y moto (conftest.py, eventos.py, unit/)
 scripts/            servidor_local.py, smoke_test.py y prueba_carga.py
 .github/workflows/  ci.yml y deploy.yml
-docker-compose.yml  Floci en el puerto 4566
+docker-compose.yml  Floci en el puerto 4566, con la imagen fijada por digest
+docs/               HLD, diagramas, costos, presentación y checkov.md
 ```
 
 ## Cómo correrlo en local
@@ -177,7 +189,7 @@ Los rulesets de GitHub impiden el push directo y el force push a `main` y `devel
 |---|---|
 | **Lint y pruebas** | `ruff check .` y `pytest` |
 | **Terraform** | `terraform fmt -check` y `terraform validate` |
-| **Checkov** | Análisis de seguridad de la infraestructura (`.checkov.yaml`) |
+| **Checkov** | Análisis de seguridad de la infraestructura (`.checkov.yaml`). La razón de cada regla omitida está en [`docs/checkov.md`](docs/checkov.md) |
 
 Si alguno falla, el pull request no se puede fusionar.
 
@@ -196,8 +208,8 @@ Cada versión estable se marca con un tag `vX.Y.Z` después de fusionar en `main
 
 ```bash
 git checkout main && git pull
-git tag v1.0.0
-git push origin v1.0.0
+git tag v1.1.0
+git push origin v1.1.0
 ```
 
 Para volver a una versión anterior:

@@ -1,6 +1,6 @@
 services:
   floci:
-    image: floci/floci:latest
+    image: floci/floci@sha256:a0fbf944d7f338cc0856f1ef83831ea749ff2be71956eb7a7fce08fc21458e19
     container_name: floci
     ports:
       - "4566:4566"
