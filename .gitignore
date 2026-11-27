@@ -20,3 +20,5 @@ frontend/config.js
 .env
 data/
 .vscode/
+
+resultado_prueba_carga.json
