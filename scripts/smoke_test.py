@@ -72,7 +72,10 @@ def main():
     verificar(encontrada is not None, f"GET /citas lista la cita creada ({estado})")
     verificar("***" in encontrada.get("correo", ""), "El correo aparece enmascarado")
 
-    estado, _ = pedir("DELETE", f"{url_api}/citas/{id_cita}")
+    estado, _ = pedir("DELETE", f"{url_api}/citas/{id_cita}", {"correo": "otro@patitas.co"})
+    verificar(estado == 403, f"DELETE con otro correo responde 403 ({estado})")
+
+    estado, _ = pedir("DELETE", f"{url_api}/citas/{id_cita}", {"correo": cita["correo"]})
     verificar(estado == 200, f"DELETE /citas/{{id}} cancela la cita ({estado})")
 
     estado, _ = pedir("POST", f"{url_api}/citas", cita)

@@ -1,8 +1,8 @@
 import json
 import logging
 
-from repositorio import CitaNoEncontrada, FranjaOcupada, cancelar, guardar, listar
-from validacion import enmascarar_correo, enmascarar_telefono, validar_cita
+from repositorio import CitaNoEncontrada, CorreoNoCoincide, FranjaOcupada, cancelar, guardar, listar
+from validacion import enmascarar_correo, enmascarar_nombre, enmascarar_telefono, validar_cita
 
 logger = logging.getLogger()
 logger.setLevel(logging.INFO)
@@ -76,6 +76,7 @@ def listar_citas(event):
     resultado = []
     for cita in citas:
         visible = {k: v for k, v in cita.items() if k != "pk"}
+        visible["dueno"] = enmascarar_nombre(cita.get("dueno"))
         visible["correo"] = enmascarar_correo(cita.get("correo"))
         visible["telefono"] = enmascarar_telefono(cita.get("telefono"))
         resultado.append(visible)
@@ -86,8 +87,17 @@ def cancelar_cita(event):
     parametros = event.get("pathParameters") or {}
     id_cita = parametros.get("id") or event.get("path", "").split("/")[-1]
     try:
-        cancelar(id_cita)
+        datos = json.loads(event.get("body") or "{}")
+    except json.JSONDecodeError:
+        datos = {}
+    correo = datos.get("correo") if isinstance(datos, dict) else None
+    if not correo or not str(correo).strip():
+        return respuesta(400, {"error": "Escribe el correo con el que agendaste la cita"})
+    try:
+        cancelar(id_cita, correo)
     except CitaNoEncontrada:
         return respuesta(404, {"error": "Cita no encontrada"})
+    except CorreoNoCoincide:
+        return respuesta(403, {"error": "El correo no coincide con el de la cita"})
     logger.info("Cita cancelada id=%s", id_cita)
     return respuesta(200, {"id": id_cita, "estado": "CANCELADA"})

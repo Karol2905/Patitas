@@ -71,7 +71,7 @@ def test_cancelar_deja_estado_cancelada(tabla):
 
     tabla.put_item(Item=_cita("abc"))
 
-    repositorio.cancelar("abc")
+    repositorio.cancelar("abc", "juan@gmail.com")
 
     archivada = tabla.get_item(Key={"pk": "CANCELADA#abc"})["Item"]
     assert archivada["estado"] == "CANCELADA"
@@ -83,7 +83,7 @@ def test_cancelar_libera_la_franja(tabla):
 
     tabla.put_item(Item=_cita("abc"))
 
-    repositorio.cancelar("abc")
+    repositorio.cancelar("abc", "juan@gmail.com")
 
     assert "Item" not in tabla.get_item(Key={"pk": "2026-12-01#09:30"})
 
@@ -93,7 +93,7 @@ def test_cancelar_conserva_los_datos_de_la_cita(tabla):
 
     tabla.put_item(Item=_cita("abc", mascota="Pachito"))
 
-    repositorio.cancelar("abc")
+    repositorio.cancelar("abc", "juan@gmail.com")
 
     archivada = tabla.get_item(Key={"pk": "CANCELADA#abc"})["Item"]
     assert archivada["id"] == "abc"
@@ -107,7 +107,7 @@ def test_franja_cancelada_se_puede_volver_a_agendar(tabla):
     import repositorio
 
     tabla.put_item(Item=_cita("vieja", mascota="Laika"))
-    repositorio.cancelar("vieja")
+    repositorio.cancelar("vieja", "juan@gmail.com")
 
     tabla.put_item(
         Item=_cita("nueva", mascota="Mono"),
@@ -124,7 +124,7 @@ def test_cancelar_solo_cambia_la_cita_indicada(tabla):
     tabla.put_item(Item=_cita("1", hora="09:00"))
     tabla.put_item(Item=_cita("2", hora="10:00", mascota="Pachito"))
 
-    repositorio.cancelar("1")
+    repositorio.cancelar("1", "juan@gmail.com")
 
     otra = tabla.get_item(Key={"pk": "2026-12-01#10:00"})["Item"]
     assert otra["estado"] == "ACTIVA"
@@ -135,8 +135,8 @@ def test_cancelar_dos_veces_no_falla_ni_duplica(tabla):
 
     tabla.put_item(Item=_cita("abc"))
 
-    repositorio.cancelar("abc")
-    repositorio.cancelar("abc")
+    repositorio.cancelar("abc", "juan@gmail.com")
+    repositorio.cancelar("abc", "juan@gmail.com")
 
     assert len(tabla.scan()["Items"]) == 1
 
@@ -145,7 +145,7 @@ def test_listar_incluye_las_canceladas(tabla):
     import repositorio
 
     tabla.put_item(Item=_cita("abc"))
-    repositorio.cancelar("abc")
+    repositorio.cancelar("abc", "juan@gmail.com")
 
     citas = repositorio.listar("2026-12-01")
 
@@ -156,4 +156,26 @@ def test_cancelar_inexistente_lanza_cita_no_encontrada(tabla):
     import repositorio
 
     with pytest.raises(repositorio.CitaNoEncontrada):
-        repositorio.cancelar("no-existe")
+        repositorio.cancelar("no-existe", "juan@gmail.com")
+
+
+def test_cancelar_con_otro_correo_lanza_correo_no_coincide(tabla):
+    import repositorio
+
+    tabla.put_item(Item=_cita("abc"))
+
+    with pytest.raises(repositorio.CorreoNoCoincide):
+        repositorio.cancelar("abc", "otro@gmail.com")
+
+    sigue = tabla.get_item(Key={"pk": "2026-12-01#09:30"})["Item"]
+    assert sigue["estado"] == "ACTIVA"
+
+
+def test_cancelar_ignora_mayusculas_y_espacios_del_correo(tabla):
+    import repositorio
+
+    tabla.put_item(Item=_cita("abc"))
+
+    repositorio.cancelar("abc", "  Juan@Gmail.com ")
+
+    assert tabla.get_item(Key={"pk": "CANCELADA#abc"})["Item"]["estado"] == "CANCELADA"
